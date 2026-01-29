@@ -1,7 +1,7 @@
 "use client"
 
 import { SquarePen } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { ConversationList } from "@/components/messages/ConversationList"
 import { MessageThread } from "@/components/messages/MessageThread"
 import { MessageInput } from "@/components/messages/MessageInput"
@@ -40,7 +40,7 @@ interface Message {
   }
 }
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { data: session } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -216,5 +216,17 @@ export default function MessagesPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-screen bg-background">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
   )
 }
