@@ -66,6 +66,25 @@ export async function Feed({ authorId }: { authorId?: string }) {
     }
   }) as any
 
+  type PrismaReaction = {
+    userId: string
+    isLike: boolean
+  }
+
+  type PrismaComment = {
+    id: string
+    content: string
+    createdAt: Date
+    replyToId: string | null
+    author: {
+      id: string
+      name: string | null
+      email: string | null
+      image: string | null
+    } | null
+    reactions: PrismaReaction[]
+  }
+
   // Transform data for PostCard
   const transformedPosts = posts.map((post) => {
     const author = post.author || { id: "", name: "User", email: "user@example.com", image: null }
@@ -84,7 +103,7 @@ export async function Feed({ authorId }: { authorId?: string }) {
       timestamp: "just now",
       isLiked: (post.likes || []).length > 0,
       currentUserId: session?.user?.id,
-      comments: (post.comments || []).map((c) => ({
+      comments: (post.comments || []).map((c: PrismaComment) => ({
           id: c.id,
           content: c.content,
           createdAt: c.createdAt,
@@ -97,7 +116,7 @@ export async function Feed({ authorId }: { authorId?: string }) {
               avatar: c.author?.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${c.author?.email}`
           },
           replyToId: c.replyToId,
-          reactions: (c.reactions || []).map(r => ({
+          reactions: (c.reactions || []).map((r: PrismaReaction) => ({
             userId: r.userId,
             isLike: r.isLike
           }))
