@@ -85,8 +85,28 @@ export async function Feed({ authorId }: { authorId?: string }) {
     reactions: PrismaReaction[]
   }
 
+  type PrismaPost = {
+    id: string
+    content: string | null
+    mediaUrl: string | null
+    mediaType: string | null
+    createdAt: Date
+    author: {
+      id: string
+      name: string | null
+      email: string | null
+      image: string | null
+    } | null
+    likes: { id: string }[]
+    comments: PrismaComment[]
+    _count: {
+      likes: number
+      comments: number
+    }
+  }
+
   // Transform data for PostCard
-  const transformedPosts = posts.map((post) => {
+  const transformedPosts = (posts as PrismaPost[]).map((post: PrismaPost) => {
     const author = post.author || { id: "", name: "User", email: "user@example.com", image: null }
     return {
       id: post.id,
