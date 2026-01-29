@@ -3,7 +3,7 @@ import { authConfig } from "./auth.config"
 
 export const { auth } = NextAuth(authConfig)
 
-export const proxy = auth((req) => {
+export default auth((req) => {
   const isLoggedIn = !!req.auth
   const { nextUrl } = req
   const isAuthPage = nextUrl.pathname === "/login" || nextUrl.pathname === "/register"
