@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { MoreHorizontal, ShieldCheck, Trash2, Edit2, Loader2, Send } from "lucide-react"
+import { MoreHorizontal, ShieldCheck, Trash2, Edit2, Loader2, Send, X } from "lucide-react"
 import { ActionButtons } from "./ActionButtons"
 import { CommentModal } from "./CommentModal"
 import { useState } from "react"
@@ -46,6 +46,7 @@ interface PostCardProps {
     reposts: number
     views: number
   }
+  isProfileView?: boolean
 }
 
 export function PostCard({ 
@@ -57,8 +58,9 @@ export function PostCard({
   timestamp, 
   isLiked,
   currentUserId,
-  comments,
-  stats 
+  comments, 
+  stats,
+  isProfileView = false
 }: PostCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -66,6 +68,8 @@ export function PostCard({
   const [editContent, setEditContent] = useState(initialContent)
   const [content, setContent] = useState(initialContent)
   const [showCommentModal, setShowCommentModal] = useState(false)
+  const [videoProgress, setVideoProgress] = useState({ currentTime: 0, duration: 0 })
+  const [showFullscreen, setShowFullscreen] = useState(false)
   
   const isAuthor = currentUserId === author.id
 
@@ -210,20 +214,65 @@ export function PostCard({
 
         {/* Image/Video Content */}
         {image && (
-          <div className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 max-h-[500px] flex items-center justify-center">
+          <div 
+            onClick={() => setShowFullscreen(true)}
+            className="rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-900 max-h-[500px] flex items-center justify-center cursor-zoom-in"
+          >
             {mediaType === 'video' ? (
-              <video 
-                src={image} 
-                className="w-full h-auto max-h-[500px] object-contain"
-                muted
-                playsInline
-                onClick={(e) => {
-                  e.stopPropagation()
-                  const video = e.currentTarget
-                  if (video.paused) video.play()
-                  else video.pause()
-                }}
-              />
+              <div className="relative group/video w-full">
+                <video 
+                  src={image} 
+                  className="w-full h-auto max-h-[500px] object-contain cursor-pointer"
+                  muted
+                  playsInline
+                  onTimeUpdate={(e) => {
+                    const video = e.currentTarget
+                    setVideoProgress({ currentTime: video.currentTime, duration: video.duration })
+                  }}
+                  onLoadedMetadata={(e) => {
+                    const video = e.currentTarget
+                    setVideoProgress({ currentTime: video.currentTime, duration: video.duration })
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const video = e.currentTarget
+                    if (video.paused) video.play()
+                    else video.pause()
+                  }}
+                />
+                
+                {/* Seek Bar Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-2 opacity-0 group-hover/video:opacity-100 transition-opacity bg-gradient-to-t from-black/60 to-transparent">
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1 h-1 flex items-center group/seekbar cursor-pointer">
+                      <input
+                        type="range"
+                        min={0}
+                        max={videoProgress.duration || 100}
+                        step={0.1}
+                        value={videoProgress.currentTime}
+                        onChange={(e) => {
+                          const video = e.currentTarget.parentElement?.parentElement?.parentElement?.previousElementSibling as HTMLVideoElement
+                          if (video) {
+                            const val = parseFloat(e.target.value)
+                            video.currentTime = val
+                            setVideoProgress(prev => ({ ...prev, currentTime: val }))
+                          }
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute inset-0 w-full h-full appearance-none bg-white/20 rounded-full cursor-pointer z-10 accent-white [&::-webkit-slider-thumb]:appearance-none"
+                      />
+                      <div 
+                        className="absolute left-0 top-0 bottom-0 bg-primary rounded-full transition-all duration-75"
+                        style={{ width: `${(videoProgress.currentTime / (videoProgress.duration || 1)) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-white font-medium tabular-nums drop-shadow-sm">
+                      {Math.floor(videoProgress.currentTime / 60)}:{(Math.floor(videoProgress.currentTime % 60)).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                </div>
+              </div>
             ) : (
               <Image
                 src={image}
@@ -262,7 +311,52 @@ export function PostCard({
           comments={comments}
           currentUserId={currentUserId}
           onClose={() => setShowCommentModal(false)}
+          showMediaOnMobile={false}
+          fullHeightOnMobile={isProfileView}
         />
+      )}
+
+      {/* Fullscreen Media Viewer */}
+      {showFullscreen && image && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black flex items-center justify-center animate-in fade-in duration-200"
+          onClick={(e) => {
+            e.stopPropagation()
+            setShowFullscreen(false)
+          }}
+        >
+          <button 
+            className="absolute top-4 right-4 p-3 text-white hover:bg-white/10 rounded-full z-[110] transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowFullscreen(false)
+            }}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          <div className="relative w-full h-full flex items-center justify-center p-4 md:p-10">
+            {mediaType === 'video' ? (
+              <video 
+                src={image} 
+                className="max-w-full max-h-full object-contain shadow-2xl"
+                autoPlay
+                controls
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <div className="relative w-full h-full">
+                <Image
+                  src={image}
+                  alt="Fullscreen content"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </article>
   )

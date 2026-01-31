@@ -20,6 +20,7 @@ model User {
   website        String?
   pronouns       String?
   dob            DateTime?
+  bannerUrl      String?
   showJoinedDate Boolean     @default(true)
   accounts       Account[]
   comments       Comment[]

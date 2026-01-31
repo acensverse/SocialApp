@@ -14,6 +14,8 @@ interface EditProfileModalProps {
     website?: string | null
     pronouns?: string | null
     dob?: Date | null
+    image?: string | null
+    bannerUrl?: string | null
     showJoinedDate?: boolean
   }
   onClose: () => void
@@ -65,6 +67,27 @@ export function EditProfileModal({ user, onClose }: EditProfileModalProps) {
           </div>
 
           <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+            {/* Avatar & Banner URLs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-500 px-1">Avatar URL</label>
+                <input 
+                  name="image"
+                  defaultValue={user.image || ""}
+                  placeholder="Image URL"
+                  className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg p-3 outline-none focus:border-primary transition-colors"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-500 px-1">Banner URL</label>
+                <input 
+                  name="bannerUrl"
+                  defaultValue={user.bannerUrl || ""}
+                  placeholder="Banner URL"
+                  className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg p-3 outline-none focus:border-primary transition-colors"
+                />
+              </div>
+            </div>
             {/* Name */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-500 px-1">Name</label>

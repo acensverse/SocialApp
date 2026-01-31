@@ -1,7 +1,8 @@
 "use client"
 
-import { Send } from "lucide-react"
-import { useState, FormEvent } from "react"
+import { useState, FormEvent, useRef } from "react"
+import { Smile, Mic, Image as ImageIcon, Heart } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface MessageInputProps {
   onSend: (content: string) => Promise<void>
@@ -11,6 +12,7 @@ interface MessageInputProps {
 export function MessageInput({ onSend, disabled }: MessageInputProps) {
   const [content, setContent] = useState("")
   const [sending, setSending] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -21,6 +23,9 @@ export function MessageInput({ onSend, disabled }: MessageInputProps) {
     try {
       await onSend(content)
       setContent("")
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto"
+      }
     } catch (error) {
       console.error("Failed to send message:", error)
       alert("Failed to send message. Please try again.")
@@ -37,37 +42,52 @@ export function MessageInput({ onSend, disabled }: MessageInputProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 dark:border-gray-800 bg-background">
-      <div className="flex items-end gap-2">
+    <div className="p-4 bg-background">
+      <form onSubmit={handleSubmit} className="relative flex items-center gap-3 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-[30px] px-4 py-2 min-h-[44px]">
+        <button type="button" className="p-2 hover:opacity-70 transition-opacity">
+            <Smile className="w-6 h-6 text-foreground" />
+        </button>
+
         <textarea
+          ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
+          placeholder="Message..."
           disabled={disabled || sending}
           rows={1}
-          className="flex-1 resize-none bg-gray-100 dark:bg-gray-900 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary/20 transition-all max-h-32 disabled:opacity-50"
-          style={{
-            minHeight: "48px",
-            height: "auto"
-          }}
+          className="flex-1 bg-transparent resize-none text-[15px] py-1.5 focus:outline-none max-h-32 disabled:opacity-50"
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement
             target.style.height = "auto"
             target.style.height = Math.min(target.scrollHeight, 128) + "px"
           }}
         />
-        <button
-          type="submit"
-          disabled={!content.trim() || sending || disabled}
-          className="p-3 bg-primary text-white rounded-full hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-        >
-          <Send className="w-5 h-5" />
-        </button>
-      </div>
-      <p className="text-xs text-gray-400 mt-2 px-2">
-        Press Enter to send, Shift + Enter for new line
-      </p>
-    </form>
+
+        <div className="flex items-center gap-1">
+          {content.trim() ? (
+            <button
+              type="submit"
+              disabled={sending || disabled}
+              className="px-4 py-2 text-primary font-bold text-sm hover:opacity-80 transition-opacity"
+            >
+              Send
+            </button>
+          ) : (
+            <>
+                <button type="button" className="p-2 hover:opacity-70 transition-opacity">
+                    <Mic className="w-6 h-6 text-foreground" />
+                </button>
+                <button type="button" className="p-2 hover:opacity-70 transition-opacity">
+                    <ImageIcon className="w-6 h-6 text-foreground" />
+                </button>
+                <button type="button" className="p-2 hover:opacity-70 transition-opacity">
+                    <Heart className="w-6 h-6 text-foreground" />
+                </button>
+            </>
+          )}
+        </div>
+      </form>
+    </div>
   )
 }

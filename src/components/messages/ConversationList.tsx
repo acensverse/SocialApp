@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
+import { cn } from "@/lib/utils"
 
 interface Conversation {
   id: string
@@ -29,9 +30,8 @@ interface ConversationListProps {
 export function ConversationList({ conversations, selectedId, onSelect }: ConversationListProps) {
   if (conversations.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-        <p className="text-lg font-medium">No conversations yet</p>
-        <p className="text-sm mt-2">Start a new conversation to get started</p>
+      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+        <p className="text-sm font-medium">No messages found.</p>
       </div>
     )
   }
@@ -44,53 +44,63 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
 
         const avatar = user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
         const displayName = user.name || user.email?.split("@")[0] || "User"
-        const timeAgo = conversation.lastMessage 
-          ? formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { addSuffix: true })
-          : ""
+        const isActive = selectedId === conversation.id
 
         return (
           <div
             key={conversation.id}
             onClick={() => onSelect(conversation.id)}
-            className={`flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-900 cursor-pointer transition-colors border-b border-gray-100 dark:border-gray-800 ${
-              selectedId === conversation.id ? "bg-gray-50 dark:bg-gray-900" : ""
-            }`}
+            className={cn(
+                "flex items-center gap-4 px-4 py-3 cursor-pointer transition-all border-l-[3px] border-transparent",
+                isActive ? "bg-gray-50 dark:bg-gray-900 border-l-foreground" : "hover:bg-gray-50 dark:hover:bg-gray-900"
+            )}
           >
-            <div className="relative">
+            <div className="relative w-14 h-14 shrink-0">
               <Image
                 src={avatar}
                 alt={displayName}
-                width={56}
-                height={56}
-                className="rounded-full bg-gray-200"
+                fill
+                className="rounded-full object-cover"
               />
-              {conversation.unreadCount > 0 && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs flex items-center justify-center rounded-full border-2 border-background">
-                  {conversation.unreadCount}
-                </div>
-              )}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-1">
-                <span className={`font-medium truncate ${
-                  conversation.unreadCount > 0 ? "text-gray-900 dark:text-white font-bold" : "text-gray-700 dark:text-gray-300"
-                }`}>
+              <div className="flex items-center justify-between">
+                <span className={cn(
+                    "text-[15px] truncate",
+                    conversation.unreadCount > 0 ? "font-bold text-foreground" : "font-medium text-gray-700 dark:text-gray-300"
+                )}>
                   {displayName}
                 </span>
-                {timeAgo && (
-                  <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                    {timeAgo.replace("about ", "")}
-                  </span>
+              </div>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className={cn(
+                    "text-sm truncate flex-1",
+                    conversation.unreadCount > 0 ? "font-bold text-foreground" : "text-gray-400"
+                )}>
+                  {conversation.lastMessage?.content || "Started a conversation"}
+                </p>
+                {conversation.lastMessage && (
+                    <>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                            {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { addSuffix: false })
+                                .replace("about ", "")
+                                .replace("less than a minute", "now")
+                                .replace(" minute", "m")
+                                .replace(" minutes", "m")
+                                .replace(" hour", "h")
+                                .replace(" hours", "h")
+                                .replace(" day", "d")
+                                .replace(" days", "d")
+                            }
+                        </span>
+                    </>
                 )}
               </div>
-              {conversation.lastMessage && (
-                <p className={`text-sm truncate ${
-                  conversation.unreadCount > 0 ? "text-gray-900 dark:text-white font-semibold" : "text-gray-500"
-                }`}>
-                  {conversation.lastMessage.content}
-                </p>
-              )}
             </div>
+            {conversation.unreadCount > 0 && (
+                <div className="w-2.5 h-2.5 bg-blue-500 rounded-full" />
+            )}
           </div>
         )
       })}

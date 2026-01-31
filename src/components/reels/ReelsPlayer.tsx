@@ -55,6 +55,7 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
   const [showMenuId, setShowMenuId] = useState<string | null>(null)
   const [editingReelId, setEditingReelId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState("")
+  const [videoProgress, setVideoProgress] = useState<{ [key: string]: { currentTime: number; duration: number } }>({})
 
   const router = useRouter()
 
@@ -122,6 +123,31 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
       video.pause()
       setIsPaused(true)
     }
+  }
+
+  const handleTimeUpdate = (id: string, e: React.SyntheticEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget
+    setVideoProgress(prev => ({
+      ...prev,
+      [id]: { currentTime: video.currentTime, duration: video.duration }
+    }))
+  }
+
+  const handleSeek = (id: string, index: number, value: number) => {
+    const video = videoRefs.current[index]
+    if (video) {
+      video.currentTime = value
+      setVideoProgress(prev => ({
+        ...prev,
+        [id]: { ...prev[id], currentTime: value }
+      }))
+    }
+  }
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = Math.floor(seconds % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   const handleLike = async () => {
@@ -215,8 +241,40 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
                     loop
                     muted={isMuted}
                     playsInline
+                    onTimeUpdate={(e) => handleTimeUpdate(reel.id, e)}
+                    onLoadedMetadata={(e) => handleTimeUpdate(reel.id, e)}
                     onClick={() => togglePlay(index)}
                   />
+
+                  {/* VIDEO SEEK BAR */}
+                  <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-2 md:px-8 md:pb-4 group/seekbar">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] md:text-xs text-white font-medium drop-shadow-md tabular-nums opacity-0 group-hover/seekbar:opacity-100 transition-opacity">
+                        {formatTime(videoProgress[reel.id]?.currentTime || 0)}
+                      </span>
+                      <div className="relative flex-1 h-1.5 md:h-2 flex items-center group cursor-pointer">
+                        <input
+                          type="range"
+                          min={0}
+                          max={videoProgress[reel.id]?.duration || 100}
+                          step={0.1}
+                          value={videoProgress[reel.id]?.currentTime || 0}
+                          onChange={(e) => handleSeek(reel.id, index, parseFloat(e.target.value))}
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute inset-0 w-full h-full appearance-none bg-white/20 rounded-full cursor-pointer z-10 accent-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-0 [&::-webkit-slider-thumb]:h-0"
+                        />
+                        <div 
+                          className="absolute left-0 top-0 bottom-0 bg-white rounded-full transition-all duration-75"
+                          style={{ 
+                            width: `${((videoProgress[reel.id]?.currentTime || 0) / (videoProgress[reel.id]?.duration || 1)) * 100}%` 
+                          }}
+                        />
+                      </div>
+                      <span className="text-[10px] md:text-xs text-white font-medium drop-shadow-md tabular-nums opacity-0 group-hover/seekbar:opacity-100 transition-opacity">
+                        {formatTime(videoProgress[reel.id]?.duration || 0)}
+                      </span>
+                    </div>
+                  </div>
 
                   {/* INTERNAL OVERLAYS (Back, Mute, Author, Info, Actions) */}
                   

@@ -1,13 +1,13 @@
 "use client"
 
-import { ArrowLeft, Calendar, Link as LinkIcon, MapPin, Mail } from "lucide-react"
+import { ArrowLeft, Calendar, Link as LinkIcon, MapPin, Mail, Settings, Moon, Sun, UserPlus, LogOut } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useState } from "react"
 import { followUser, unfollowUser } from "@/actions/user"
 import { useRouter } from "next/navigation"
 import { FollowListModal } from "./FollowListModal"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 
 import { EditProfileModal } from "./EditProfileModal"
 import { StoryViewer } from "../stories/StoryViewer"
@@ -34,6 +34,7 @@ interface ProfileHeaderProps {
     website?: string | null
     pronouns?: string | null
     dob?: Date | null
+    bannerUrl?: string | null
     showJoinedDate?: boolean
     createdAt?: Date
   }
@@ -59,6 +60,7 @@ export function ProfileHeader({
   const [followingState, setFollowingState] = useState(isFollowing)
   const [followerCount, setFollowerCount] = useState(counts.followers)
   const [modalType, setModalType] = useState<"followers" | "following" | "edit" | "story" | null>(null)
+  const [showSettings, setShowSettings] = useState(false)
   const router = useRouter()
 
   const handle = user.email?.split("@")[0] || "user"
@@ -102,21 +104,108 @@ export function ProfileHeader({
     router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false })
   }
 
+  const toggleDarkMode = () => {
+    const isDark = document.documentElement.classList.toggle("dark")
+    localStorage.setItem("theme", isDark ? "dark" : "light")
+  }
+
   return (
     <div className="bg-background">
       {/* Header with Back Button (Mobile) */}
-      <div className="sticky top-0 bg-background/80 backdrop-blur z-20 px-4 py-2 flex items-center gap-4 md:hidden">
-         <Link href="/" className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
-            <ArrowLeft className="w-5 h-5" />
-         </Link>
-         <div>
-            <h1 className="font-bold text-lg">{user.name || "User"}</h1>
-            <p className="text-xs text-gray-500">View profile</p>
+      <div className="sticky top-0 bg-background/80 backdrop-blur z-20 px-4 py-2 flex items-center justify-between md:hidden">
+         <div className="flex items-center gap-4">
+            <Link href="/" className="p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
+               <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+               <h1 className="font-bold text-lg">{user.name || "User"}</h1>
+               <p className="text-xs text-gray-500">View profile</p>
+            </div>
          </div>
+         
+         {isOwnProfile && (
+           <div className="relative">
+             <button 
+               onClick={() => setShowSettings(!showSettings)}
+               className="p-2 -mr-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors"
+             >
+                <Settings className="w-5 h-5" />
+             </button>
+
+             {showSettings && (
+               <>
+                 <div 
+                   className="fixed inset-0 z-30" 
+                   onClick={() => setShowSettings(false)}
+                 />
+                 <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-2xl z-40 py-2 animate-in fade-in zoom-in-95 duration-200">
+                    <button 
+                      onClick={() => {
+                        toggleDarkMode()
+                        setShowSettings(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                        <Moon className="w-4 h-4 dark:hidden" />
+                        <Sun className="w-4 h-4 hidden dark:block" />
+                      </div>
+                      <span className="font-bold">Dark mode</span>
+                    </button>
+
+                    <Link 
+                      href="/settings"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500">
+                        <Settings className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold">Settings</span>
+                    </Link>
+
+                    <button 
+                      onClick={() => {
+                        // Logic for switch accounts
+                        setShowSettings(false)
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-500/10 flex items-center justify-center text-green-500">
+                        <UserPlus className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold">Switch accounts</span>
+                    </button>
+
+                    <div className="my-2 border-t border-gray-100 dark:border-zinc-800" />
+
+                    <button 
+                      onClick={() => signOut({ callbackUrl: "/login" })}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
+                        <LogOut className="w-4 h-4" />
+                      </div>
+                      <span className="font-bold">Logout</span>
+                    </button>
+                 </div>
+               </>
+             )}
+           </div>
+         )}
       </div>
 
       {/* Banner */}
-      <div className="h-32 md:h-48 bg-gradient-to-r from-blue-400 to-purple-500"></div>
+      <div className="h-32 md:h-48 bg-gradient-to-r from-blue-400 to-purple-500 relative overflow-hidden group">
+        {user.bannerUrl && (
+          <Image 
+            src={user.bannerUrl} 
+            alt="Banner" 
+            fill 
+            className="object-cover"
+            priority
+          />
+        )}
+      </div>
 
       {/* Profile Info */}
       <div className="px-4 pb-4 border-b border-gray-200 dark:border-gray-800 relative">

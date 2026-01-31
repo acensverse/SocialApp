@@ -114,6 +114,8 @@ export async function updateProfile(formData: FormData) {
   const website = formData.get("website") as string
   const pronouns = formData.get("pronouns") as string
   const dobString = formData.get("dob") as string
+  const image = formData.get("image") as string
+  const bannerUrl = formData.get("bannerUrl") as string
   const showJoinedDate = formData.get("showJoinedDate") === "true"
 
   const dob = dobString ? new Date(dobString) : null
@@ -127,6 +129,8 @@ export async function updateProfile(formData: FormData) {
       website,
       pronouns,
       dob,
+      image,
+      bannerUrl,
       showJoinedDate,
     },
   })

@@ -6,7 +6,8 @@ import { useSession } from "next-auth/react"
 import { MediaUploader } from "../upload/MediaUploader" // Assuming relative path
 import { uploadMedia } from "@/actions/upload"
 import { createPost } from "@/actions/post"
-import { Image as ImageIcon, Send } from "lucide-react"
+import { Image as ImageIcon, Send, Loader2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export function CreatePost() {
   const { data: session } = useSession()

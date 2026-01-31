@@ -7,15 +7,16 @@ import { cn } from "@/lib/utils"
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isReels = pathname === "/reels"
+  const isMessages = pathname?.startsWith("/messages")
 
   return (
     <main className={cn(
-        "flex-1 w-full max-w-2xl mx-auto relative",
-        !isReels && "md:border-r border-gray-200 dark:border-gray-800",
+        "flex-1 w-full relative",
+        !isMessages && "max-w-2xl mx-auto",
         "pb-16 md:pb-0"
     )}>
       {!isReels && <TopNav />}
-      <div className={cn(!isReels && "pt-14 md:pt-0")}>
+      <div className={cn(!isReels && "pt-0")}>
         {children}
       </div>
     </main>

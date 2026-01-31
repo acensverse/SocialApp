@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/auth"
 import { cn } from "@/lib/utils"
 import { PostGridItem } from "./PostGridItem"
+import { ProfileGallery } from "./ProfileGallery"
 
 export async function Feed({ authorId, tab = "all" }: { authorId?: string, tab?: string }) {
   const session = await auth()
@@ -208,24 +209,18 @@ export async function Feed({ authorId, tab = "all" }: { authorId?: string, tab?:
   const isGrid = tab === "posts" || tab === "reels"
 
   return (
-    <div className={cn("pb-20 md:pb-0", isGrid && "grid grid-cols-3 gap-1 px-1 md:px-0")}>
-       {transformedPosts.length === 0 ? (
-           <div className="text-center py-10 text-gray-500 col-span-3">
-               No content found in this section.
-           </div>
-       ) : (
-           transformedPosts.map((post: any) => (
-             isGrid ? (
-               <PostGridItem 
-                 key={post.id} 
-                 post={post} 
-                 aspectRatio={tab === "reels" ? "video" : "square"} 
-               />
-             ) : (
-               <PostCard key={post.id} {...post} />
-             )
-           ))
-       )}
+    <div className={cn("pb-20 md:pb-0")}>
+        {transformedPosts.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+                No content found in this section.
+            </div>
+        ) : isGrid ? (
+            <ProfileGallery posts={transformedPosts} tab={tab} />
+        ) : (
+            transformedPosts.map((post: any) => (
+              <PostCard key={post.id} {...post} isProfileView={!!authorId} />
+            ))
+        )}
     </div>
   )
 }

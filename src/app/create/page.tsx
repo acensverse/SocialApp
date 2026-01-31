@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { Image as ImageIcon, X, Film, User as UserIcon, PlusCircle, LucideIcon } from "lucide-react"
+import { Image as ImageIcon, X, Film, PlusCircle, LucideIcon, Radio, Camera, Zap, RotateCcw } from "lucide-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { uploadMedia, updateProfileImage } from "@/actions/upload"
+import { uploadMedia } from "@/actions/upload"
 import { useSession } from "next-auth/react"
+import { useEffect, useRef } from "react"
+import { cn } from "@/lib/utils"
 
-type UploadType = "post" | "story" | "profile"
+type UploadType = "post" | "story" | "live"
 
 export default function CreatePage() {
   const router = useRouter()
@@ -17,6 +19,9 @@ export default function CreatePage() {
   const [preview, setPreview] = useState<string | null>(null)
   const [caption, setCaption] = useState("")
   const [loading, setLoading] = useState(false)
+  const [isStreaming, setIsStreaming] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -53,11 +58,6 @@ export default function CreatePage() {
         const result = await uploadMedia(formData, "story")
         if (!result.success) throw new Error(result.error)
         router.push("/")
-      } else if (activeType === "profile") {
-        if (!file) throw new Error("File required for profile update")
-        const result = await updateProfileImage(formData)
-        if (!result.success) throw new Error(result.error)
-        router.push("/profile")
       }
 
       router.refresh()
@@ -69,10 +69,54 @@ export default function CreatePage() {
     }
   }
 
+  useEffect(() => {
+    if (activeType === "live") {
+      startCamera()
+    } else {
+      stopCamera()
+    }
+    return () => stopCamera()
+  }, [activeType])
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: true 
+      })
+      streamRef.current = stream
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+      }
+    } catch (err) {
+      console.error("Camera error:", err)
+      // Only alert if we're actually trying to be in live mode
+      if (activeType === 'live') {
+        alert("Please allow camera access to go live")
+      }
+    }
+  }
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    setIsStreaming(false)
+  }
+
+  const handleGoLive = () => {
+    setIsStreaming(true)
+    // Here we would normally start the RTMP/WebRTC broadcast
+  }
+
   const types: { id: UploadType; label: string; icon: LucideIcon }[] = [
     { id: "post", label: "Post", icon: PlusCircle },
     { id: "story", label: "Story", icon: Film },
-    { id: "profile", label: "Profile", icon: UserIcon },
+    { id: "live", label: "Live", icon: Radio },
   ]
 
   return (
@@ -85,13 +129,26 @@ export default function CreatePage() {
                <X className="w-6 h-6" />
             </button>
             <h1 className="text-lg font-bold flex-1 text-center">Create New {activeType.charAt(0).toUpperCase() + activeType.slice(1)}</h1>
-            <button 
-              onClick={handlePost}
-              disabled={(!file && (activeType !== "post" || !caption.trim())) || loading}
-              className="text-primary font-bold disabled:opacity-50 hover:text-blue-600 transition-colors px-4 py-1"
-            >
-              {loading ? "Sharing..." : "Share"}
-            </button>
+            {activeType === 'live' ? (
+              <button 
+                onClick={handleGoLive}
+                disabled={loading || isStreaming}
+                className={cn(
+                    "font-bold transition-all px-6 py-1.5 rounded-full shadow-lg",
+                    isStreaming ? "bg-red-500 text-white animate-pulse" : "bg-primary text-white hover:bg-blue-600"
+                )}
+              >
+                {isStreaming ? "LIVE" : "Go Live"}
+              </button>
+            ) : (
+              <button 
+                onClick={handlePost}
+                disabled={(!file && (activeType !== "post" || !caption.trim())) || loading}
+                className="text-primary font-bold disabled:opacity-50 hover:text-blue-600 transition-colors px-4 py-1"
+              >
+                {loading ? "Sharing..." : "Share"}
+              </button>
+            )}
         </div>
 
         {/* Type Selector */}
@@ -115,8 +172,62 @@ export default function CreatePage() {
 
         <div className="p-6 flex flex-col gap-8 flex-1">
             {/* Image Preview / Drop Area */}
-            <div className={`w-full ${activeType === 'story' ? 'aspect-[9/16] max-h-[600px]' : 'aspect-square'} bg-gray-50 dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center relative overflow-hidden group shadow-inner transition-all duration-300`}>
-                {preview ? (
+            <div className={cn(
+                "w-full bg-gray-50 dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 flex items-center justify-center relative overflow-hidden group shadow-inner transition-all duration-300",
+                activeType === 'story' || activeType === 'live' ? 'aspect-[9/16] max-h-[700px]' : 'aspect-square'
+            )}>
+                {activeType === 'live' ? (
+                    <div className="w-full h-full relative bg-black">
+                        <video 
+                            ref={videoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-full object-cover mirror"
+                        />
+                        
+                        {/* Camera Overlays */}
+                        <div className="absolute inset-x-0 top-0 p-6 flex justify-between items-start bg-gradient-to-b from-black/60 to-transparent pointer-events-none">
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                                    <div className={cn("w-2 h-2 rounded-full", isStreaming ? "bg-red-500 animate-pulse" : "bg-gray-400")} />
+                                    <span className="text-white text-[10px] font-black uppercase tracking-widest">
+                                        {isStreaming ? "Streaming" : "Preview"}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col gap-4 pointer-events-auto">
+                                <button className="p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-black/60 transition-all">
+                                    <Zap className="w-5 h-5" />
+                                </button>
+                                <button className="p-3 bg-black/40 backdrop-blur-md rounded-full border border-white/10 text-white hover:bg-black/60 transition-all">
+                                    <RotateCcw className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Bottom Stats Overlay (Conditional) */}
+                        {isStreaming && (
+                            <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-between">
+                                <div className="flex items-center gap-4">
+                                     <div className="flex flex-col">
+                                        <span className="text-white font-bold text-sm tracking-tight">{session?.user?.name} is LIVE</span>
+                                        <span className="text-white/60 text-xs font-medium">0 Viewers</span>
+                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {!isStreaming && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <div className="bg-black/20 backdrop-blur-sm p-8 rounded-full border border-white/10 mb-4 animate-in zoom-in duration-500">
+                                    <Camera className="w-12 h-12 text-white opacity-80" />
+                                </div>
+                                <p className="text-white/80 font-bold text-lg drop-shadow-lg">Camera Ready</p>
+                            </div>
+                        )}
+                    </div>
+                ) : preview ? (
                    <>
                       {file?.type.startsWith('video') ? (
                           <video 
@@ -147,10 +258,10 @@ export default function CreatePage() {
                         <ImageIcon className="w-10 h-10" />
                       </div>
                       <div>
-                        <p className="font-bold text-lg">Select {activeType === 'profile' ? 'Photo' : 'Media'}</p>
+                        <p className="font-bold text-lg">Select Media</p>
                         <p className="text-sm opacity-60">{activeType === 'story' ? '9:16 Video or Image' : 'Photos or Videos'} up to 10MB</p>
                       </div>
-                      <input type="file" className="hidden" accept={activeType === 'profile' ? "image/*" : "image/*,video/*"} onChange={handleFileChange} />
+                      <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileChange} />
                    </label>
                 )}
             </div>
@@ -182,9 +293,9 @@ export default function CreatePage() {
                 </div>
             )}
 
-            {activeType === "profile" && (
+            {activeType === "live" && (
                 <div className="text-center text-gray-500 text-sm animate-in fade-in duration-300">
-                    This will update your profile picture across the platform.
+                    Interact with your audience in real-time. Connect and build your community.
                 </div>
             )}
         </div>

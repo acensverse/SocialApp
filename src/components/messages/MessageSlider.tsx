@@ -167,7 +167,7 @@ export function MessageSlider() {
                   ) : (
                     <>
                       <div className="flex-1 overflow-y-auto">
-                        <MessageThread messages={messages} currentUserId={session.user.id} />
+                        <MessageThread messages={messages} currentUserId={session?.user?.id || ""} />
                       </div>
                       <div className="shrink-0 p-2 bg-background border-t border-gray-100 dark:border-gray-800">
                         <MessageInput onSend={handleSendMessage} />

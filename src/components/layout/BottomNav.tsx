@@ -2,14 +2,15 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Search, Clapperboard, PlusSquare, User } from "lucide-react"
+import { Home, Search, Clapperboard, MessageCircle, User, Radio } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const bottomNavItems = [
   { icon: Home, label: "Home", href: "/" },
   { icon: Search, label: "Explore", href: "/explore" },
-  { icon: PlusSquare, label: "Create", href: "/create" },
+  { icon: Radio, label: "Live", href: "/live", isLive: true },
   { icon: Clapperboard, label: "Reels", href: "/reels" },
+  { icon: MessageCircle, label: "Messages", href: "/messages" },
   { icon: User, label: "Profile", href: "/profile" },
 ]
 
@@ -28,12 +29,21 @@ export function BottomNav() {
             href={item.href}
             className="flex flex-col items-center justify-center p-2 flex-1"
           >
-            <Icon 
-              className={cn(
-                "w-7 h-7 transition-all", 
-                isActive ? "text-primary stroke-[3px]" : "text-gray-500 stroke-[2px]"
-              )} 
-            />
+            <div className="relative">
+              <Icon 
+                className={cn(
+                  "w-7 h-7 transition-all", 
+                  isActive ? "text-primary stroke-[3px]" : "text-gray-500 stroke-[2px]",
+                  item.isLive && (isActive ? "text-red-500" : "text-gray-500")
+                )} 
+              />
+              {item.isLive && (
+                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+              )}
+            </div>
           </Link>
         )
       })}

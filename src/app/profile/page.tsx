@@ -44,6 +44,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           website: user.website,
           pronouns: user.pronouns,
           dob: user.dob,
+          bannerUrl: user.bannerUrl,
           showJoinedDate: user.showJoinedDate,
           createdAt: user.createdAt
         }} 
