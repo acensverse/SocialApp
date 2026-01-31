@@ -1,5 +1,3 @@
-![SocialApp Banner](/home/ryu/.gemini/antigravity/brain/ff9623d1-3848-4160-b950-a45a32c7fa90/social_app_banner_1769899795357.png)
-
 <div align="center">
 
 # ✨ SocialApp ✨
