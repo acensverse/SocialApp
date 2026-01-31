@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Heart,
   MessageCircle,
@@ -193,7 +194,7 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
   }
 
   return (
-    <div className="h-[calc(100dvh-4rem)] md:h-screen w-full overflow-hidden bg-white dark:bg-zinc-950 relative z-1">
+    <div className="h-screen w-full overflow-hidden bg-white dark:bg-black relative z-[60]">
       {/* MAIN VIDEO COLUMN - Shifts via padding on desktop */}
       <div
         ref={containerRef}
@@ -210,7 +211,7 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
         return (
           <div
             key={reel.id}
-            className="h-[calc(100dvh-4rem)] md:h-screen w-full snap-start flex bg-white dark:bg-zinc-950 relative overflow-hidden"
+            className="h-[100dvh] md:h-screen w-full snap-start flex bg-white dark:bg-black relative overflow-hidden"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
@@ -541,43 +542,67 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
       })}
     </div>
 
-    {/* PERSISTENT COMMENT SIDEBAR (Desktop: Fixed Right, Mobile: Bottom Sheet handled inside) */}
-    <div className={cn(
-      "transition-all duration-500 ease-in-out z-[120] overflow-hidden",
-      // Desktop: Fixed to far right edge
-      "md:fixed md:top-0 md:right-0 md:h-full md:w-[400px] md:border-l md:border-gray-100 md:dark:border-zinc-800 bg-white dark:bg-zinc-950",
-      showCommentModal ? "md:translate-x-0" : "md:translate-x-full",
-      // Mobile handles its own fixed positioning inside the component
-      !showCommentModal && "pointer-events-none"
-    )}>
-      {showCommentModal && currentReel && (
-        <ReelsCommentSidebar 
-          key={currentReel.id}
-          postId={currentReel.id}
-          postContent={currentReel.description}
-          postAuthor={currentReel.author}
-          comments={currentReel.comments}
-          currentUserId={currentUserId}
-          onClose={() => setShowCommentModal(false)}
-        />
-      )}
+    {/* GLOBAL OVERLAY FOR MODALS (Lifts everything above BottomNav) */}
+    <div className="md:hidden">
+      <AnimatePresence>
+        {showCommentModal && (
+          <>
+            {/* BACKDROP */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 z-[150] pointer-events-auto"
+              onClick={() => setShowCommentModal(false)}
+            />
+            {/* SIDEBAR COMPONENT (handles its own movement) */}
+            <div className="fixed inset-x-0 bottom-0 z-[160] pointer-events-none">
+              <div className="pointer-events-auto">
+                <ReelsCommentSidebar 
+                  key={currentReel?.id}
+                  postId={currentReel?.id || ""}
+                  postContent={currentReel?.description || ""}
+                  postAuthor={currentReel?.author || { id: "", name: "", handle: "", avatar: "" }}
+                  comments={currentReel?.comments || []}
+                  currentUserId={currentUserId}
+                  onClose={() => setShowCommentModal(false)}
+                />
+              </div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
 
-    {/* MOBILE BACKDROP - Also lifted */}
-    {showCommentModal && (
-      <div 
-        className="fixed inset-0 bottom-16 bg-black/60 z-[110] md:hidden animate-in fade-in duration-300"
-        onClick={() => setShowCommentModal(false)}
-      />
-    )}
-
-      <ShareModal
-        isOpen={showShare}
-        onClose={() => setShowShare(false)}
-        url="/reels"
-        title="Check out this reel!"
-      />
+    {/* DESKTOP SIDEBAR (Static/Fixed on Right) */}
+    <div className="hidden md:block">
+      <AnimatePresence>
+        {showCommentModal && currentReel && (
+          <div className={cn(
+            "transition-all duration-500 ease-in-out z-[120] overflow-hidden fixed top-0 right-0 h-screen w-[400px] border-l border-gray-100 dark:border-zinc-800 bg-white dark:bg-black",
+            showCommentModal ? "translate-x-0" : "translate-x-full"
+          )}>
+            <ReelsCommentSidebar 
+              key={currentReel.id}
+              postId={currentReel.id}
+              postContent={currentReel.description}
+              postAuthor={currentReel.author}
+              comments={currentReel.comments}
+              currentUserId={currentUserId}
+              onClose={() => setShowCommentModal(false)}
+            />
+          </div>
+        )}
+      </AnimatePresence>
     </div>
-  )
+
+    <ShareModal
+      isOpen={showShare}
+      onClose={() => setShowShare(false)}
+      url="/reels"
+      title="Check out this reel!"
+    />
+  </div>
+)
 }
 

@@ -12,11 +12,11 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <main className={cn(
         "flex-1 w-full relative",
-        !isMessages && "max-w-2xl mx-auto",
-        "pb-16 md:pb-0"
+        !isMessages && !isReels && "max-w-2xl mx-auto",
+        isReels ? "z-[60]" : "pb-16 md:pb-0"
     )}>
       {!isReels && <TopNav />}
-      <div className={cn(!isReels && "pt-0")}>
+      <div className={cn(!isReels && "pt-0", isReels && "h-full")}>
         {children}
       </div>
     </main>

@@ -3,10 +3,12 @@
 import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import { Send, Heart } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { LiveComment } from "./mockData"
 
 interface LiveChatProps {
   initialComments: LiveComment[];
+  overlayMode?: boolean;
 }
 
 const NICKNAMES = ["TechFan", "WebWiz", "CodeMaster", "PixelArtist", "DevLife", "GrowthMind"];
@@ -23,7 +25,7 @@ const MESSAGES = [
   "Nice work dude",
 ];
 
-export function LiveChat({ initialComments }: LiveChatProps) {
+export function LiveChat({ initialComments, overlayMode = false }: LiveChatProps) {
   const [comments, setComments] = useState<LiveComment[]>(initialComments);
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -66,14 +68,22 @@ export function LiveChat({ initialComments }: LiveChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-black/40 backdrop-blur-xl border-l border-white/10">
-      <div className="p-4 border-b border-white/10 bg-white/5">
-        <h3 className="font-black text-xs uppercase tracking-[0.2em] text-white/50">Live Chat</h3>
-      </div>
+    <div className={cn(
+      "flex flex-col h-full",
+      overlayMode ? "bg-transparent" : "bg-black/40 backdrop-blur-xl border-l border-white/10"
+    )}>
+      {!overlayMode && (
+        <div className="p-4 border-b border-white/10 bg-white/5">
+          <h3 className="font-black text-xs uppercase tracking-[0.2em] text-white/50">Live Chat</h3>
+        </div>
+      )}
 
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide"
+        className={cn(
+          "flex-1 overflow-y-auto space-y-4 no-scrollbar",
+          overlayMode ? "p-4 mask-image-b-0 mask-image-t-full [mask-image:linear-gradient(to_bottom,transparent,black_20%)]" : "p-4"
+        )}
       >
         {comments.map((comment) => (
           <div key={comment.id} className="flex gap-3 group animate-in slide-in-from-bottom-2 fade-in duration-300">
@@ -98,14 +108,21 @@ export function LiveChat({ initialComments }: LiveChatProps) {
         ))}
       </div>
 
-      <div className="p-4 bg-white/5 border-t border-white/10">
+      <div className={cn(
+        overlayMode ? "p-4 bg-transparent" : "p-4 bg-white/5 border-t border-white/10"
+      )}>
         <form onSubmit={handleSend} className="relative">
           <input 
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Say something..."
-            className="w-full bg-white/10 border border-white/10 rounded-2xl py-3 pl-4 pr-12 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all"
+            placeholder={overlayMode ? "Comment..." : "Say something..."}
+            className={cn(
+              "w-full rounded-2xl py-3 pl-4 pr-12 text-sm text-white focus:outline-none transition-all",
+              overlayMode 
+                ? "bg-black/20 border-transparent placeholder:text-white/50 focus:bg-black/40" 
+                : "bg-white/10 border border-white/10 placeholder:text-white/30 focus:ring-2 focus:ring-red-500/50"
+            )}
           />
           <button 
             type="submit"

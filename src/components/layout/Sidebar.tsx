@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Home, Search, Clapperboard, MessageCircle, Heart, PlusSquare, User, Menu, Twitter, LogOut, Radio, Settings, Moon, Sun, UserPlus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { signOut, useSession } from "next-auth/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 const sidebarItems = [
   { icon: Home, label: "Home", href: "/" },
@@ -22,10 +22,33 @@ export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [showMore, setShowMore] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
 
-  const toggleDarkMode = () => {
-    const isDark = document.documentElement.classList.toggle("dark")
-    localStorage.setItem("theme", isDark ? "dark" : "light")
+  useEffect(() => {
+    // Load theme from localStorage on mount
+    const savedTheme = localStorage.getItem("theme")
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+    const shouldBeDark = savedTheme === "dark" || (!savedTheme && prefersDark)
+    
+    if (shouldBeDark) {
+      document.documentElement.classList.add("dark")
+      setIsDarkMode(true)
+    } else {
+      document.documentElement.classList.remove("dark")
+      setIsDarkMode(false)
+    }
+  }, [])
+
+  const setLightMode = () => {
+    document.documentElement.classList.remove("dark")
+    localStorage.setItem("theme", "light")
+    setIsDarkMode(false)
+  }
+
+  const setDarkMode = () => {
+    document.documentElement.classList.add("dark")
+    localStorage.setItem("theme", "dark")
+    setIsDarkMode(true)
   }
 
   const isAuthPage = pathname === "/login" || pathname === "/register"
@@ -50,7 +73,7 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-4 p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors group",
+                "flex items-center gap-4 p-3 rounded-full hover:bg-gray-100 dark:hover:bg-zinc-800 dark:hover:text-white transition-colors group",
                 isActive && "font-bold"
               )}
             >
@@ -78,27 +101,41 @@ export function Sidebar() {
               className="fixed inset-0 z-40" 
               onClick={() => setShowMore(false)}
             />
-            <div className="absolute bottom-full left-0 mb-2 w-[220px] bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <button 
-                onClick={() => {
-                  toggleDarkMode()
-                  setShowMore(false)
-                }}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-              >
-                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
-                  <Moon className="w-4 h-4 dark:hidden" />
-                  <Sun className="w-4 h-4 hidden dark:block" />
-                </div>
-                <span className="font-bold">Dark mode</span>
-              </button>
+            <div className="absolute bottom-full left-0 mb-2 w-[220px] bg-white dark:bg-neutral-900 text-black dark:text-white border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 py-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              {!isDarkMode ? (
+                <button 
+                  onClick={() => {
+                    setDarkMode()
+                    setShowMore(false)
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                    <Moon className="w-4 h-4" />
+                  </div>
+                  <span className="font-bold">Dark mode</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => {
+                    setLightMode()
+                    setShowMore(false)
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-yellow-50 dark:bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                    <Sun className="w-4 h-4" />
+                  </div>
+                  <span className="font-bold">Light mode</span>
+                </button>
+              )}
 
               <Link 
                 href="/settings"
                 onClick={() => setShowMore(false)}
                 className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500">
+                <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-zinc-500 dark:text-zinc-300">
                   <Settings className="w-4 h-4" />
                 </div>
                 <span className="font-bold">Settings</span>
@@ -109,9 +146,9 @@ export function Sidebar() {
                   // Switch accounts logic
                   setShowMore(false)
                 }}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors text-black dark:text-white"
               >
-                <div className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-500/10 flex items-center justify-center text-green-500">
+                <div className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center text-green-500 dark:text-green-400">
                   <UserPlus className="w-4 h-4" />
                 </div>
                 <span className="font-bold">Switch accounts</span>
@@ -121,9 +158,9 @@ export function Sidebar() {
 
               <button 
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
-                <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
                   <LogOut className="w-4 h-4" />
                 </div>
                 <span className="font-bold">Logout</span>

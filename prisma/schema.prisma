@@ -181,6 +181,8 @@ model ConversationParticipant {
 model Message {
   id             String       @id @default(cuid())
   content        String
+  mediaUrl       String?
+  mediaType      String?
   conversationId String
   senderId       String
   createdAt      DateTime     @default(now())

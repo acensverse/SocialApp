@@ -32,6 +32,8 @@ interface Conversation {
 interface Message {
   id: string
   content: string
+  mediaUrl?: string | null
+  mediaType?: string | null
   createdAt: Date
   senderId: string
   sender: {
@@ -99,11 +101,11 @@ function MessagesContent() {
     }
   }
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, formData?: FormData) => {
     if (!selectedConversationId) return
 
     try {
-      const newMessage = await sendMessage(selectedConversationId, content)
+      const newMessage = await sendMessage(selectedConversationId, content, formData)
       setMessages(prev => [...prev, newMessage as Message])
       await loadConversations() // Refresh conversation list to update last message
     } catch (error) {

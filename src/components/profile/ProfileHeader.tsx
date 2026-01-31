@@ -3,7 +3,7 @@
 import { ArrowLeft, Calendar, Link as LinkIcon, MapPin, Mail, Settings, Moon, Sun, UserPlus, LogOut } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { followUser, unfollowUser } from "@/actions/user"
 import { useRouter } from "next/navigation"
 import { FollowListModal } from "./FollowListModal"
@@ -61,7 +61,35 @@ export function ProfileHeader({
   const [followerCount, setFollowerCount] = useState(counts.followers)
   const [modalType, setModalType] = useState<"followers" | "following" | "edit" | "story" | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    // Load theme from localStorage on mount
+    const savedTheme = localStorage.getItem("theme")
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+    const shouldBeDark = savedTheme === "dark" || (!savedTheme && prefersDark)
+    
+    if (shouldBeDark) {
+      document.documentElement.classList.add("dark")
+      setIsDarkMode(true)
+    } else {
+      document.documentElement.classList.remove("dark")
+      setIsDarkMode(false)
+    }
+  }, [])
+
+  const setLightMode = () => {
+    document.documentElement.classList.remove("dark")
+    localStorage.setItem("theme", "light")
+    setIsDarkMode(false)
+  }
+
+  const setDarkMode = () => {
+    document.documentElement.classList.add("dark")
+    localStorage.setItem("theme", "dark")
+    setIsDarkMode(true)
+  }
 
   const handle = user.email?.split("@")[0] || "user"
   const avatar = user.image || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
@@ -104,11 +132,6 @@ export function ProfileHeader({
     router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false })
   }
 
-  const toggleDarkMode = () => {
-    const isDark = document.documentElement.classList.toggle("dark")
-    localStorage.setItem("theme", isDark ? "dark" : "light")
-  }
-
   return (
     <div className="bg-background">
       {/* Header with Back Button (Mobile) */}
@@ -139,25 +162,39 @@ export function ProfileHeader({
                    onClick={() => setShowSettings(false)}
                  />
                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-2xl z-40 py-2 animate-in fade-in zoom-in-95 duration-200">
-                    <button 
-                      onClick={() => {
-                        toggleDarkMode()
-                        setShowSettings(false)
-                      }}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
-                        <Moon className="w-4 h-4 dark:hidden" />
-                        <Sun className="w-4 h-4 hidden dark:block" />
-                      </div>
-                      <span className="font-bold">Dark mode</span>
-                    </button>
+                    {!isDarkMode ? (
+                      <button 
+                        onClick={() => {
+                          setDarkMode()
+                          setShowSettings(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center text-blue-500">
+                          <Moon className="w-4 h-4" />
+                        </div>
+                        <span className="font-bold">Dark mode</span>
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => {
+                          setLightMode()
+                          setShowSettings(false)
+                        }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-full bg-yellow-50 dark:bg-yellow-500/10 flex items-center justify-center text-yellow-500">
+                          <Sun className="w-4 h-4" />
+                        </div>
+                        <span className="font-bold">Light mode</span>
+                      </button>
+                    )}
 
                     <Link 
                       href="/settings"
                       className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-500">
+                      <div className="w-8 h-8 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-zinc-500 dark:text-zinc-300">
                         <Settings className="w-4 h-4" />
                       </div>
                       <span className="font-bold">Settings</span>
@@ -170,7 +207,7 @@ export function ProfileHeader({
                       }}
                       className="flex items-center gap-3 w-full px-4 py-3 text-sm hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-500/10 flex items-center justify-center text-green-500">
+                      <div className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center text-green-500 dark:text-green-400">
                         <UserPlus className="w-4 h-4" />
                       </div>
                       <span className="font-bold">Switch accounts</span>
@@ -180,9 +217,9 @@ export function ProfileHeader({
 
                     <button 
                       onClick={() => signOut({ callbackUrl: "/login" })}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center">
                         <LogOut className="w-4 h-4" />
                       </div>
                       <span className="font-bold">Logout</span>

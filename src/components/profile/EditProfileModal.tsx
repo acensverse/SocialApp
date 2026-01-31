@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { X } from "lucide-react"
+import { X, Camera, ImagePlus } from "lucide-react"
 import { updateProfile } from "@/actions/user"
 import { useRouter } from "next/navigation"
+import Image from "next/image"
+import { useRef } from "react"
 
 interface EditProfileModalProps {
   user: {
@@ -23,7 +25,20 @@ interface EditProfileModalProps {
 
 export function EditProfileModal({ user, onClose }: EditProfileModalProps) {
   const [loading, setLoading] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user.image || null)
+  const [bannerPreview, setBannerPreview] = useState<string | null>(user.bannerUrl || null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const bannerInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const url = URL.createObjectURL(file)
+      if (type === 'avatar') setAvatarPreview(url)
+      else setBannerPreview(url)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -66,28 +81,67 @@ export function EditProfileModal({ user, onClose }: EditProfileModalProps) {
             </button>
           </div>
 
-          <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-            {/* Avatar & Banner URLs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-500 px-1">Avatar URL</label>
-                <input 
-                  name="image"
-                  defaultValue={user.image || ""}
-                  placeholder="Image URL"
-                  className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg p-3 outline-none focus:border-primary transition-colors"
-                />
+          <div className="relative group">
+            {/* Banner Upload */}
+            <div 
+              className="h-32 md:h-40 bg-zinc-100 dark:bg-zinc-800 relative cursor-pointer group"
+              onClick={() => bannerInputRef.current?.click()}
+            >
+              {bannerPreview ? (
+                <Image src={bannerPreview} alt="Banner" fill className="object-cover transition-opacity group-hover:opacity-70" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-blue-400 to-purple-500 opacity-50" />
+              )}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="bg-black/50 p-3 rounded-full text-white backdrop-blur-sm">
+                  <Camera className="w-6 h-6" />
+                </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-500 px-1">Banner URL</label>
+              <input 
+                type="file" 
+                name="bannerFile" 
+                ref={bannerInputRef} 
+                className="hidden" 
+                accept="image/*"
+                onChange={(e) => handleFileChange(e, 'banner')}
+              />
+              {/* Keep track of existing URL if no new file selected */}
+              <input type="hidden" name="bannerUrl" value={user.bannerUrl || ""} />
+            </div>
+
+            {/* Avatar Upload */}
+            <div className="px-6 pb-6 relative">
+              <div className="relative mt-[-10%] inline-block">
+                <div 
+                  className="w-24 h-24 rounded-full border-4 border-background overflow-hidden bg-zinc-200 relative cursor-pointer group"
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  {avatarPreview ? (
+                    <Image src={avatarPreview} alt="Avatar" fill className="object-cover group-hover:opacity-70 transition-opacity" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                       <ImagePlus className="w-8 h-8 text-zinc-400" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                     <Camera className="w-6 h-6 text-white" />
+                  </div>
+                </div>
                 <input 
-                  name="bannerUrl"
-                  defaultValue={user.bannerUrl || ""}
-                  placeholder="Banner URL"
-                  className="w-full bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg p-3 outline-none focus:border-primary transition-colors"
+                  type="file" 
+                  name="imageFile" 
+                  ref={avatarInputRef} 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={(e) => handleFileChange(e, 'avatar')}
                 />
+                {/* Keep track of existing URL if no new file selected */}
+                <input type="hidden" name="image" value={user.image || ""} />
               </div>
             </div>
+          </div>
+
+          <div className="p-6 pt-0 space-y-6 max-h-[50vh] overflow-y-auto">
             {/* Name */}
             <div className="space-y-1">
               <label className="text-sm font-medium text-gray-500 px-1">Name</label>

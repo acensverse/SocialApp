@@ -127,27 +127,36 @@ export function ReelsCommentSidebar({
     return `${days}d`
   }
 
+  const [isMobile, setIsMobile] = useState(true)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <motion.div 
-      initial={{ y: "100%" }}
-      animate={{ y: "10%" }}
-      exit={{ y: "100%" }}
+      initial={isMobile ? { y: "100%" } : { y: 0, opacity: 1 }}
+      animate={isMobile ? { y: "0%" } : { y: 0, opacity: 1 }}
+      exit={isMobile ? { y: "100%" } : { y: 0, opacity: 1 }}
       transition={{ type: "spring", damping: 25, stiffness: 200 }}
-      drag="y"
+      drag={isMobile ? "y" : false}
       dragConstraints={{ top: 0 }}
       dragElastic={0.05}
       onDragEnd={(e, info) => {
         // Only trigger close on mobile if dragged down enough
-        if (window.innerWidth < 768 && (info.offset.y > 200 || info.velocity.y > 600)) {
+        if (isMobile && (info.offset.y > 200 || info.velocity.y > 600)) {
           onClose()
         }
       }}
       className={cn(
         "bg-white dark:bg-zinc-950 flex flex-col relative",
         // Desktop Sidebar
-        "md:absolute md:top-0 md:right-0 md:w-full md:h-full md:border-l md:border-gray-100 md:dark:border-zinc-800",
+        "md:w-full md:h-full md:static",
         // Mobile Bottom Sheet
-        "shadow-2xl fixed bottom-0 left-0 right-0 h-[100dvh] md:h-full rounded-t-[32px] md:rounded-none z-[100]"
+        "shadow-2xl fixed bottom-0 left-0 right-0 h-[85vh] md:h-full rounded-t-[32px] md:rounded-none z-[100]"
       )}
     >
       {/* MINIMAL CLOSE BUTTON (Desktop) */}

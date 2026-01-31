@@ -3,6 +3,7 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
+import { uploadToCloudinary } from "@/lib/cloudinary"
 
 export async function getConversations() {
   const session = await auth()
@@ -179,14 +180,10 @@ export async function getMessages(conversationId: string) {
   return messages
 }
 
-export async function sendMessage(conversationId: string, content: string) {
+export async function sendMessage(conversationId: string, content: string, formData?: FormData) {
   const session = await auth()
   if (!session?.user?.id) {
     throw new Error("Unauthorized")
-  }
-
-  if (!content.trim()) {
-    throw new Error("Message cannot be empty")
   }
 
   // Verify user is participant
@@ -201,9 +198,28 @@ export async function sendMessage(conversationId: string, content: string) {
     throw new Error("Not authorized to send messages in this conversation")
   }
 
+  let mediaUrl: string | null = null
+  let mediaType: string | null = null
+
+  // Handle media upload if provided
+  if (formData) {
+    const file = formData.get("file") as File
+    if (file && file.size > 0) {
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      const fileBase64 = `data:${file.type};base64,${buffer.toString('base64')}`
+      const resourceType = file.type.startsWith('video') ? 'video' : 'image'
+      const result = await uploadToCloudinary(fileBase64, 'messages', resourceType)
+      mediaUrl = result.secure_url
+      mediaType = resourceType
+    }
+  }
+
   const message = await prisma.message.create({
     data: {
-      content: content.trim(),
+      content: content.trim() || "",
+      mediaUrl,
+      mediaType,
       conversationId,
       senderId: session.user.id
     },

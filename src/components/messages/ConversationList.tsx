@@ -52,7 +52,7 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
             onClick={() => onSelect(conversation.id)}
             className={cn(
                 "flex items-center gap-4 px-4 py-3 cursor-pointer transition-all border-l-[3px] border-transparent",
-                isActive ? "bg-gray-50 dark:bg-gray-900 border-l-foreground" : "hover:bg-gray-50 dark:hover:bg-gray-900"
+                isActive ? "bg-gray-100 dark:bg-zinc-800 border-l-foreground" : "hover:bg-gray-50 dark:hover:bg-zinc-900"
             )}
           >
             <div className="relative w-14 h-14 shrink-0">
@@ -81,8 +81,8 @@ export function ConversationList({ conversations, selectedId, onSelect }: Conver
                 </p>
                 {conversation.lastMessage && (
                     <>
-                        <span className="text-gray-300">·</span>
-                        <span className="text-xs text-gray-400 whitespace-nowrap">
+                        <span className="text-gray-300 dark:text-gray-600">·</span>
+                        <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
                             {formatDistanceToNow(new Date(conversation.lastMessage.createdAt), { addSuffix: false })
                                 .replace("about ", "")
                                 .replace("less than a minute", "now")

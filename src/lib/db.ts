@@ -1,4 +1,4 @@
-// Forced reload to pick up new Prisma Client
+// Forced reload v2 to pick up new Prisma Client
 import "server-only"
 import { PrismaClient } from "@prisma/client"
 import { PrismaLibSql } from "@prisma/adapter-libsql"
@@ -15,7 +15,8 @@ const adapter = new PrismaLibSql({
     url: databaseUrl || "file:./dev.db"
 })
 
-export const prisma = globalForPrisma.prisma || new PrismaClient({
+// Force recreate client to pick up schema changes
+export const prisma = new PrismaClient({
     adapter
 })
 

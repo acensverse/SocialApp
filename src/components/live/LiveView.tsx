@@ -1,7 +1,9 @@
 "use client"
 
 import Image from "next/image"
-import { X, Users, Share2, MoreHorizontal, Maximize2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { X, Users, Share2, MoreHorizontal, Maximize2, Minimize2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { LiveStream } from "./mockData"
 import { LiveChat } from "./LiveChat"
 
@@ -11,16 +13,45 @@ interface LiveViewProps {
 }
 
 export function LiveView({ stream, onClose }: LiveViewProps) {
+  const [isMaximized, setIsMaximized] = useState(true);
+  const [isUIActive, setUIActive] = useState(true);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+
+  const handleMouseMove = () => {
+    setUIActive(true);
+    if (timer) clearTimeout(timer);
+    
+    // Hide UI after 3 seconds of inactivity
+    const newTimer = setTimeout(() => {
+      setUIActive(false);
+    }, 3000);
+    
+    setTimer(newTimer);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timer) clearTimeout(timer);
+    }
+  }, [timer]);
+
   return (
-    <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-3xl flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-300">
-      {/* Video Content */}
-      <div className="relative flex-1 bg-black flex items-center justify-center p-2 md:p-8">
-        <div className="relative aspect-video w-full max-w-5xl rounded-3xl md:rounded-[40px] overflow-hidden shadow-[0_0_100px_rgba(239,68,68,0.2)] border border-white/5">
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col md:flex-row animate-in fade-in zoom-in-95 duration-300">
+      {/* Video Content Container */}
+      <div 
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setUIActive(false)}
+        className={cn(
+        "relative h-full bg-black overflow-hidden group transition-all duration-300",
+        isMaximized ? "w-full" : "flex-1"
+      )}>
+        <div className="absolute inset-0">
           <Image 
             src={stream.thumbnail} 
             alt={stream.title}
             fill
-            className="object-cover opacity-60 scale-105 blur-[2px]"
+            className="object-cover"
           />
           
           {/* Mock Video Player Controls */}
@@ -33,10 +64,16 @@ export function LiveView({ stream, onClose }: LiveViewProps) {
              </div>
           </div>
 
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40" />
+          <div className={cn(
+            "absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 transition-opacity duration-300",
+            isUIActive ? "opacity-100" : "opacity-0"
+          )} />
           
-          {/* Header Overlay */}
-          <div className="absolute top-4 left-4 right-4 md:top-8 md:left-8 md:right-8 flex items-center justify-between pointer-events-none">
+          {/* Header Overlay - Only visible when active */}
+          <div className={cn(
+            "absolute top-4 left-4 right-4 md:top-8 md:left-8 md:right-8 flex items-center justify-between pointer-events-none transition-opacity duration-300 z-[60]",
+            isUIActive ? "opacity-100" : "opacity-0"
+          )}>
             <div className="flex items-center gap-2 md:gap-4 pointer-events-auto">
               <div className="bg-red-500 text-white text-[8px] md:text-[10px] font-black px-2 py-0.5 md:px-3 md:py-1 rounded-full uppercase tracking-widest flex items-center gap-1.5 md:gap-2">
                 <span className="w-1 md:w-1.5 h-1 md:h-1.5 bg-white rounded-full animate-pulse" />
@@ -55,12 +92,21 @@ export function LiveView({ stream, onClose }: LiveViewProps) {
               <button className="bg-white/10 hover:bg-white/20 p-1.5 md:p-2.5 rounded-full backdrop-blur-xl border border-white/10 transition-all text-white">
                 <MoreHorizontal className="w-4 h-4 md:w-5 md:h-5" />
               </button>
+              <button 
+                onClick={onClose}
+                className="bg-white/10 hover:bg-red-500 p-1.5 md:p-2.5 rounded-full backdrop-blur-xl border border-white/10 transition-all text-white group"
+              >
+                <X className="w-4 h-4 md:w-5 md:h-5 group-hover:rotate-90 transition-transform" />
+              </button>
             </div>
           </div>
 
-          {/* Bottom Overlay */}
-          <div className="absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:right-8 flex items-end justify-between">
-            <div className="max-w-[70%] md:max-w-xl">
+          {/* Bottom Overlay - Only visible when active */}
+          <div className={cn(
+            "absolute bottom-4 left-4 right-4 md:bottom-8 md:left-8 md:right-8 flex items-end justify-between z-[60] pointer-events-none transition-opacity duration-300",
+            isUIActive ? "opacity-100" : "opacity-0"
+          )}>
+            <div className="max-w-[70%] md:max-w-xl pointer-events-auto">
               <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
                 <div className="relative w-8 h-8 md:w-12 md:h-12">
                   <Image 
@@ -76,25 +122,46 @@ export function LiveView({ stream, onClose }: LiveViewProps) {
                 </div>
               </div>
             </div>
-            <button className="bg-white/10 hover:bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl backdrop-blur-xl border border-white/10 transition-all text-white">
-              <Maximize2 className="w-4 h-4 md:w-6 md:h-6" />
+            <button 
+              onClick={() => {
+                const newState = !isMaximized;
+                setIsMaximized(newState);
+                
+                // Toggle Browser Fullscreen
+                if (newState) {
+                   document.documentElement.requestFullscreen().catch((e) => {
+                     console.error("Error attempting to enable fullscreen:", e);
+                   });
+                } else {
+                   if (document.fullscreenElement) {
+                     document.exitFullscreen().catch((e) => {
+                       console.error("Error attempting to exit fullscreen:", e);
+                     });
+                   }
+                }
+              }}
+              className="bg-white/10 hover:bg-white/20 p-2 md:p-3 rounded-xl md:rounded-2xl backdrop-blur-xl border border-white/10 transition-all text-white pointer-events-auto"
+            >
+              {isMaximized ? (
+                <Minimize2 className="w-4 h-4 md:w-6 md:h-6" />
+              ) : (
+                 <Maximize2 className="w-4 h-4 md:w-6 md:h-6" />
+              )}
             </button>
           </div>
         </div>
-
-        {/* Close Button */}
-        <button 
-          onClick={onClose}
-          className="absolute top-4 right-4 md:top-8 md:right-8 p-2 md:p-3 bg-white/10 hover:bg-red-500 rounded-xl md:rounded-2xl backdrop-blur-xl border border-white/10 transition-all text-white z-50 group"
-        >
-          <X className="w-5 h-5 md:w-7 md:h-7 group-hover:rotate-90 transition-transform" />
-        </button>
       </div>
 
-      {/* Chat Sidebar */}
-      <div className="w-full md:w-[400px] h-[400px] md:h-full">
-        <LiveChat initialComments={stream.comments} />
+      {/* Chat Container */}
+      <div className={cn(
+        "transition-all duration-300 z-50",
+        isMaximized 
+          ? "absolute bottom-4 left-4 md:left-4 right-4 md:right-auto md:w-[350px] h-[300px] md:h-[400px]" // Fullscreen: Overlay on Left
+          : "relative w-full md:w-[350px] h-full border-l border-white/10 bg-black" // Theater: Side-by-Side Right
+      )}>
+        <LiveChat initialComments={stream.comments} overlayMode={isMaximized} />
       </div>
+
     </div>
   )
 }

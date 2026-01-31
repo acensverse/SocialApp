@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils"
 interface Message {
   id: string
   content: string
+  mediaUrl?: string | null
+  mediaType?: string | null
   createdAt: Date
   senderId: string
   sender: {
@@ -77,29 +79,29 @@ export function MessageThread({ messages, currentUserId }: MessageThreadProps) {
             )}
             
             <div className={cn("flex flex-col", isSent ? "items-end" : "items-start")}>
-              {isMedia ? (
-                <div className="relative w-64 aspect-[9/16] rounded-[24px] overflow-hidden bg-black shadow-lg border border-gray-100 dark:border-zinc-800">
+              {message.mediaUrl && message.mediaType ? (
+                <div className={cn(
+                  "relative rounded-[24px] overflow-hidden bg-black shadow-lg border border-gray-100 dark:border-zinc-800",
+                  message.mediaType === 'video' ? "w-64 aspect-[9/16]" : "w-80 aspect-square"
+                )}>
+                  {message.mediaType === 'video' ? (
+                    <video src={message.mediaUrl} controls className="w-full h-full object-cover" />
+                  ) : (
                     <Image 
-                        src="https://images.unsplash.com/photo-1544191173-834f5d9d4513?w=400&h=700&fit=crop" 
-                        alt="Reel" 
-                        fill 
-                        className="object-cover opacity-90" 
+                      src={message.mediaUrl} 
+                      alt="Attachment" 
+                      fill 
+                      className="object-cover" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                    <div className="absolute top-4 left-4 flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
-                            <Play className="w-3 h-3 text-white fill-current" />
-                        </div>
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wider">stics.ai</span>
-                    </div>
-                    <div className="absolute bottom-4 left-4 p-2">
-                        <Play className="w-6 h-6 text-white stroke-[2.5px]" />
-                    </div>
+                  )}
                 </div>
-              ) : (
+              ) : null}
+              
+              {message.content && (
                 <div
                     className={cn(
                         "px-4 py-2.5 rounded-[22px] text-[15px] shadow-sm",
+                        message.mediaUrl ? "mt-2" : "",
                         isSent
                             ? "bg-black text-white dark:bg-white dark:text-black"
                             : "bg-gray-100 dark:bg-zinc-800 text-foreground"

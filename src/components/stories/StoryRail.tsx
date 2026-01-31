@@ -56,7 +56,7 @@ export function StoryRail({ stories }: { stories: Story[] }) {
 
   return (
     <>
-      <div className="w-full border-b border-gray-200 dark:border-gray-800 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 md:static z-40">
+      <div className="w-full border-b border-gray-200 dark:border-gray-800 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex gap-4 overflow-x-auto p-4 no-scrollbar">
           {/* Show "Your Story" placeholder if user has no story */}
           {!userHasStory && session?.user && (

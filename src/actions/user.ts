@@ -104,6 +104,8 @@ export async function getFollowing(userId: string) {
   return follows.map(f => f.following)
 }
 
+import { uploadToCloudinary } from "@/lib/cloudinary"
+
 export async function updateProfile(formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) throw new Error("Unauthorized")
@@ -114,9 +116,31 @@ export async function updateProfile(formData: FormData) {
   const website = formData.get("website") as string
   const pronouns = formData.get("pronouns") as string
   const dobString = formData.get("dob") as string
-  const image = formData.get("image") as string
-  const bannerUrl = formData.get("bannerUrl") as string
   const showJoinedDate = formData.get("showJoinedDate") === "true"
+
+  const imageFile = formData.get("imageFile") as File
+  const bannerFile = formData.get("bannerFile") as File
+
+  let image = formData.get("image") as string
+  let bannerUrl = formData.get("bannerUrl") as string
+
+  // Handle Avatar Upload
+  if (imageFile && imageFile.size > 0) {
+    const bytes = await imageFile.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const fileBase64 = `data:${imageFile.type};base64,${buffer.toString('base64')}`
+    const result = await uploadToCloudinary(fileBase64, 'avatars', 'image')
+    image = result.secure_url
+  }
+
+  // Handle Banner Upload
+  if (bannerFile && bannerFile.size > 0) {
+    const bytes = await bannerFile.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const fileBase64 = `data:${bannerFile.type};base64,${buffer.toString('base64')}`
+    const result = await uploadToCloudinary(fileBase64, 'banners', 'image')
+    bannerUrl = result.secure_url
+  }
 
   const dob = dobString ? new Date(dobString) : null
 
