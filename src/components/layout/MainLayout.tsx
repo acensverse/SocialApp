@@ -10,7 +10,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <main className={cn(
-        "flex-1 w-full max-w-2xl mx-auto md:border-r border-gray-200 dark:border-gray-800 relative",
+        "flex-1 w-full max-w-2xl mx-auto relative",
+        !isReels && "md:border-r border-gray-200 dark:border-gray-800",
         "pb-16 md:pb-0"
     )}>
       {!isReels && <TopNav />}

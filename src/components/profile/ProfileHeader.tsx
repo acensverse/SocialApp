@@ -44,6 +44,7 @@ interface ProfileHeaderProps {
   isFollowing?: boolean
   isOwnProfile?: boolean
   stories?: Story[]
+  activeTab?: string
 }
 
 export function ProfileHeader({ 
@@ -51,7 +52,8 @@ export function ProfileHeader({
   counts = { followers: 0, following: 0 }, 
   isFollowing = false, 
   isOwnProfile = true,
-  stories = []
+  stories = [],
+  activeTab = "posts"
 }: ProfileHeaderProps) {
   const { data: session } = useSession()
   const [followingState, setFollowingState] = useState(isFollowing)
@@ -85,6 +87,20 @@ export function ProfileHeader({
   }
 
   const joinedDate = user.createdAt ? new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(new Date(user.createdAt)) : "January 2026"
+
+  const tabs = [
+    { id: "posts", label: "Posts" },
+    { id: "reels", label: "Reels" },
+    { id: "tweets", label: "Tweet" },
+    { id: "repost", label: "Repost" },
+    { id: "tagged", label: "Tagged" }
+  ]
+
+  const handleTabChange = (tabId: string) => {
+    const params = new URLSearchParams(window.location.search)
+    params.set("tab", tabId)
+    router.push(`${window.location.pathname}?${params.toString()}`, { scroll: false })
+  }
 
   return (
     <div className="bg-background">
@@ -233,10 +249,14 @@ export function ProfileHeader({
 
       {/* Tabs */}
       <div className="flex border-b border-gray-200 dark:border-gray-800">
-         {["Posts", "Replies", "Highlights", "Media", "Likes"].map((tab, i) => (
-            <button key={tab} className={`flex-1 hover:bg-gray-50 dark:hover:bg-gray-900 py-4 text-sm font-bold text-center relative ${i === 0 ? "text-foreground" : "text-gray-500"}`}>
-               {tab}
-               {i === 0 && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full"></div>}
+         {tabs.map((tab) => (
+            <button 
+              key={tab.id} 
+              onClick={() => handleTabChange(tab.id)}
+              className={`flex-1 hover:bg-gray-50 dark:hover:bg-gray-900 py-4 text-sm font-bold text-center relative ${activeTab === tab.id ? "text-foreground" : "text-gray-500"}`}
+            >
+               {tab.label}
+               {activeTab === tab.id && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary rounded-full"></div>}
             </button>
          ))}
       </div>

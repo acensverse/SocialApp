@@ -13,7 +13,8 @@ import {
   Bookmark,
   Pencil,
   Trash2,
-  MoreVertical
+  MoreVertical,
+  ThumbsDown
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
@@ -102,6 +103,14 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
     return () => observer.disconnect()
   }, [])
 
+  useEffect(() => {
+    document.body.style.overflow = showCommentModal ? "hidden" : "auto"
+    return () => {
+      document.body.style.overflow = "auto"
+    }
+  }, [showCommentModal])
+
+
   const togglePlay = (index: number) => {
     const video = videoRefs.current[index]
     if (!video) return
@@ -158,11 +167,15 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="h-[calc(100dvh-4rem)] md:h-screen w-full overflow-y-scroll snap-y snap-mandatory bg-black overflow-x-hidden"
-      style={{ scrollbarWidth: "none" }}
-    >
+    <div className="h-[calc(100dvh-4rem)] md:h-screen w-full overflow-hidden bg-white dark:bg-zinc-950 relative z-1">
+      {/* MAIN VIDEO COLUMN - Shifts via padding on desktop */}
+      <div
+        ref={containerRef}
+        className={cn(
+          "h-full w-full overflow-y-auto snap-y snap-mandatory overflow-x-hidden [&::-webkit-scrollbar]:hidden transition-all duration-500 ease-in-out",
+        )}
+        style={{ scrollbarWidth: "none" }}
+      >
       {reels.map((reel, index) => {
         const likeState = likeStates[reel.id]
         const isAuthor = currentUserId === reel.author.id
@@ -171,7 +184,7 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
         return (
           <div
             key={reel.id}
-            className="h-[calc(100dvh-4rem)] md:h-screen w-full snap-start flex bg-black relative overflow-hidden"
+            className="h-[calc(100dvh-4rem)] md:h-screen w-full snap-start flex bg-white dark:bg-zinc-950 relative overflow-hidden"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
@@ -181,131 +194,66 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
               {/* MAIN REEL AREA (VIDEO + ACTIONS OVERLAY) */}
               <div className="flex-1 h-full relative flex items-center justify-center transition-all duration-300">
                 
-                {/* VIDEO WRAPPER */}
-                <div className="relative w-full h-full flex items-center justify-center">
+                {/* Responsive Grouping: Centers video+icons as a unit on desktop */}
+                <div className="flex flex-col md:flex-row md:items-end md:gap-6 w-full md:w-auto h-full md:h-auto items-center justify-center">
                   
-                  {/* VIDEO CONTAINER - Responsive sizing */}
+                  {/* CENTERED VIDEO WRAPPER - Fullscreen on Mobile, Premium Card on Desktop */}
                   <div 
-                    className="relative flex items-center justify-center flex-shrink-0 transition-all duration-300" 
-                    style={{ 
-                      width: 'min(100vw, calc(100vh * 9/16), 650px)', 
-                      height: '100% ' // Takes 100% of parent which is adjusted per device
-                    }}
-                  >
-                    <video
-                      ref={(el) => {
-                        videoRefs.current[index] = el
-                      }}
-                      src={reel.url}
-                      className="h-full w-full object-contain cursor-pointer md:rounded-xl bg-zinc-900 shadow-2xl"
-                      loop
-                      muted={isMuted}
-                      playsInline
-                      onClick={() => togglePlay(index)}
-                    />
-
-                    {/* ACTIONS OVERLAY (MOBILE) */}
-                    <div className="absolute bottom-4 right-2 flex flex-col items-center gap-4 md:hidden z-20">
-                      <div className="flex flex-col items-center">
-                        <button onClick={handleLike} className="flex flex-col items-center p-2">
-                          <Heart
-                            className={cn(
-                              "w-8 h-8",
-                              likeState.isLiked ? "fill-red-500 text-red-500" : "text-white"
-                            )}
-                          />
-                          <span className="text-[10px] mt-1 font-bold text-white shadow-sm">{likeState.count}</span>
-                        </button>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <button onClick={() => setShowCommentModal(true)} className="flex flex-col items-center p-2">
-                          <MessageCircle className="w-8 h-8 text-white" />
-                          <span className="text-[10px] mt-1 font-bold text-white shadow-sm">{reel.commentsCount}</span>
-                        </button>
-                      </div>
-                      <button onClick={() => setShowShare(true)} className="p-2">
-                        <ShareIcon className="w-8 h-8 text-white" />
-                      </button>
-
-                      <button className="p-2">
-                        <Repeat className="w-8 h-8 text-white" />
-                      </button>
-                      <button className="p-2">
-                        <Bookmark className="w-8 h-8 text-white" />
-                      </button>
-
-                      {isAuthor && (
-                        <div className="relative">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setShowMenuId(showMenuId === reel.id ? null : reel.id)
-                            }}
-                            className="p-2 text-white"
-                          >
-                            <MoreVertical className="w-8 h-8" />
-                          </button>
-                          
-                          {showMenuId === reel.id && (
-                            <div className="absolute right-0 bottom-full mb-4 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-2 min-w-[140px] animate-in fade-in slide-in-from-bottom-2 duration-200">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setEditingReelId(reel.id)
-                                  setEditValue(reel.description)
-                                  setShowMenuId(null)
-                                }}
-                                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-white hover:bg-zinc-800 transition-colors"
-                              >
-                                <Pencil className="w-4 h-4" /> Edit
-                              </button>
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDelete(reel.id)
-                                  setShowMenuId(null)
-                                }}
-                                className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" /> Delete
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* PLAY ICON OVERLAY */}
-                    {isPaused && isCurrent && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
-                        <div className="bg-black/50 p-5 rounded-full z-10">
-                          <Play className="w-10 h-10 text-white fill-white" />
-                        </div>
-                      </div>
+                    className={cn(
+                      "relative flex-shrink-0 bg-black md:bg-zinc-900 overflow-hidden min-w-0 transition-all duration-500",
+                      "w-full h-full md:h-[85vh] md:w-auto md:aspect-[9/16]",
+                      "rounded-none md:rounded-[32px]",
+                      "md:shadow-2xl md:border md:border-gray-100 dark:md:border-zinc-800"
                     )}
+                  >
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[index] = el
+                    }}
+                    src={reel.url}
+                    className="h-full w-full object-cover cursor-pointer"
+                    loop
+                    muted={isMuted}
+                    playsInline
+                    onClick={() => togglePlay(index)}
+                  />
 
-                    {/* REEL INFO OVERLAY */}
-                    <div className="absolute bottom-4 left-4 right-16 md:right-4 text-white z-10">
-                      <div className="flex items-center gap-3 mb-3 pointer-events-auto">
-                        <Link href={`/profile/${reel.author.id}`}>
-                          <img 
-                            src={reel.author.avatar} 
-                            alt={reel.author.name}
-                            className="w-10 h-10 rounded-full border border-white/20 object-cover"
-                          />
-                        </Link>
-                        <Link href={`/profile/${reel.author.id}`} className="font-bold hover:underline">
-                          {reel.author.name}
-                        </Link>
-                        {!isAuthor && (
-                          <button className="bg-white text-black px-4 py-1 rounded-full text-xs font-bold ml-2 hover:bg-gray-200 transition-colors">
-                            Follow
-                          </button>
-                        )}
-                      </div>
+                  {/* INTERNAL OVERLAYS (Back, Mute, Author, Info, Actions) */}
+                  
+                  {/* BACK BUTTON (Top Left) */}
+                  <Link
+                    href="/"
+                    className="absolute top-4 left-4 md:top-6 md:left-6 p-2.5 md:p-3 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full z-20 transition-all border border-white/10 group"
+                  >
+                    <ArrowLeft className="text-white w-5 h-5 md:w-6 md:h-6 group-hover:scale-110 transition-transform" />
+                  </Link>
 
+                  {/* MUTE BUTTON (Top Right) */}
+                  <button
+                    onClick={e => {
+                      e.stopPropagation()
+                      setIsMuted(!isMuted)
+                    }}
+                    className="absolute top-4 right-4 md:top-6 md:right-6 p-2.5 md:p-3 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full z-20 transition-all border border-white/10"
+                  >
+                    {isMuted ? <VolumeX className="w-5 h-5 md:w-6 md:h-6 text-white" /> : <Volume2 className="w-5 h-5 md:w-6 md:h-6 text-white" />}
+                  </button>
+
+                  {/* REEL INFO & AUTHOR (Bottom Left) */}
+                  <div className="absolute bottom-6 left-6 right-16 md:bottom-10 md:left-8 md:right-24 text-white z-10 pointer-events-none flex flex-col gap-3 md:gap-4">
+                    {/* Author Profile */}
+                    <Link href={`/profile/${reel.author.id}`} className="mb-1 md:mb-2 pointer-events-auto w-fit">
+                      <img 
+                        src={reel.author.avatar} 
+                        alt={reel.author.name}
+                        className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-white object-cover shadow-lg hover:scale-105 transition-transform"
+                      />
+                    </Link>
+
+                    <div className="flex flex-col">
+                      <h2 className="text-lg md:text-2xl font-black mb-0.5 md:mb-1 drop-shadow-lg tracking-tight">{reel.description.split('\n')[0]}</h2>
                       {editingReelId === reel.id ? (
-                        <div className="pointer-events-auto bg-black/40 backdrop-blur-sm p-3 rounded-xl border border-white/10 max-w-sm">
+                        <div className="pointer-events-auto bg-black/40 backdrop-blur-sm p-4 rounded-2xl border border-white/10 max-w-sm">
                           <textarea
                             value={editValue}
                             onChange={(e) => setEditValue(e.target.value)}
@@ -313,101 +261,106 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
                             rows={3}
                             autoFocus
                           />
-                          <div className="flex justify-end gap-2 mt-2">
-                            <button 
-                              onClick={() => setEditingReelId(null)}
-                              className="px-3 py-1 text-xs font-bold text-gray-400"
-                            >
-                              Cancel
-                            </button>
-                            <button 
-                              onClick={() => handleEditReel(reel.id)}
-                              className="px-3 py-1 text-xs font-bold text-white bg-blue-500 rounded-full"
-                            >
-                              Save
-                            </button>
+                          <div className="flex justify-end gap-3 mt-3">
+                            <button onClick={() => setEditingReelId(null)} className="px-4 py-2 text-xs font-bold text-gray-400">Cancel</button>
+                            <button onClick={() => handleEditReel(reel.id)} className="px-4 py-2 text-xs font-bold text-white bg-blue-500 rounded-full">Save</button>
                           </div>
                         </div>
                       ) : (
-                        <p className="text-sm line-clamp-2 max-w-sm drop-shadow-lg pointer-events-none">
+                        <p className="text-sm md:text-base font-medium drop-shadow-lg line-clamp-2 opacity-95">
                           {reel.description}
                         </p>
                       )}
                     </div>
                   </div>
 
-                  {/* DESKTOP ACTIONS COLUMN */}
-                  <div className={cn(
-                    "hidden md:flex flex-col items-center gap-5 text-white z-10 shrink-0 ml-6 pb-12 self-end"
-                  )}>
+                  {/* INTERACTION STACK OVERLAY (Mobile only - Bottom Right) */}
+                  <div className="absolute bottom-6 right-3 z-10 flex flex-col items-center gap-3 md:hidden">
+                    {/* Like */}
                     <div className="flex flex-col items-center">
                       <button onClick={handleLike} className="group flex flex-col items-center">
-                        <div className="p-3 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-full transition-all">
+                        <div className="bg-white/20 hover:bg-white/30 backdrop-blur-md p-2.5 rounded-full transition-all text-white border border-white/10">
                           <Heart
                             className={cn(
-                              "w-7 h-7",
-                              likeState.isLiked ? "fill-red-500 text-red-500 scale-110" : "text-white group-hover:scale-110"
+                              "w-6 h-6",
+                              likeState.isLiked ? "fill-red-500 text-red-500" : ""
                             )}
                           />
                         </div>
-                        <span className="text-xs mt-1 font-medium">{likeState.count}</span>
+                        <span className="text-[10.5px] mt-1 font-bold text-white drop-shadow-md">{likeState.count}K</span>
                       </button>
                     </div>
 
+                    {/* Dislike */}
+                    <div className="flex flex-col items-center">
+                      <button className="group flex flex-col items-center">
+                        <div className="bg-white/20 hover:bg-white/30 backdrop-blur-md p-2.5 rounded-full transition-all text-white border border-white/10">
+                          <ThumbsDown className="w-6 h-6" />
+                        </div>
+                        <span className="text-[10.5px] mt-1 font-bold text-white drop-shadow-md">Dislike</span>
+                      </button>
+                    </div>
+
+                    {/* Comment */}
                     <div className="flex flex-col items-center">
                       <button onClick={() => setShowCommentModal(true)} className="group flex flex-col items-center">
-                        <div className="p-3 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-full transition-all">
-                          <MessageCircle className="w-7 h-7 group-hover:scale-110" />
+                        <div className="bg-white/20 hover:bg-white/30 backdrop-blur-md p-2.5 rounded-full transition-all text-white border border-white/10">
+                          <MessageCircle className="w-6 h-6" />
                         </div>
-                        <span className="text-xs mt-1 font-medium">{reel.commentsCount}</span>
+                        <span className="text-[10.5px] mt-1 font-bold text-white drop-shadow-md">{reel.commentsCount}</span>
                       </button>
                     </div>
 
-                    <button onClick={() => setShowShare(true)} className="group flex flex-col items-center">
-                      <div className="p-3 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-full transition-all">
-                        <ShareIcon className="w-7 h-7 group-hover:scale-110" />
-                      </div>
-                    </button>
+                     {/* Share */}
+                    <div className="flex flex-col items-center">
+                      <button onClick={() => setShowShare(true)} className="group flex flex-col items-center">
+                        <div className="bg-white/20 hover:bg-white/30 backdrop-blur-md p-2.5 rounded-full transition-all text-white border border-white/10">
+                          <ShareIcon className="w-6 h-6" />
+                        </div>
+                      </button>
+                    </div>
 
-                    <button className="group flex flex-col items-center">
-                      <div className="p-3 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-full transition-all">
-                        <Repeat className="w-7 h-7 group-hover:scale-110" />
-                      </div>
-                    </button>
-
-                    <button className="group flex flex-col items-center">
-                      <div className="p-3 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-full transition-all">
-                        <Bookmark className="w-7 h-7 group-hover:scale-110" />
-                      </div>
-                    </button>
+                     {/* Remix/Repeat */}
+                    <div className="flex flex-col items-center">
+                      <button className="group flex flex-col items-center">
+                        <div className="bg-white/20 hover:bg-white/30 backdrop-blur-md p-2.5 rounded-full transition-all text-white border border-white/10">
+                          <Repeat className="w-6 h-6" />
+                        </div>
+                      </button>
+                    </div>
 
                     {isAuthor && (
                       <div className="relative">
                         <button 
-                          onClick={() => setShowMenuId(showMenuId === reel.id ? null : reel.id)}
-                          className="p-3 bg-zinc-800/40 hover:bg-zinc-800/60 rounded-full transition-all text-white group flex flex-col items-center"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setShowMenuId(showMenuId === reel.id ? null : reel.id)
+                          }}
+                          className="bg-white/20 hover:bg-white/30 backdrop-blur-md p-2.5 rounded-full transition-all text-white border border-white/10"
                         >
-                          <MoreVertical className="w-7 h-7 group-hover:scale-110" />
+                          <MoreVertical className="w-5 h-5" />
                         </button>
                         
                         {showMenuId === reel.id && (
-                          <div className="absolute right-0 bottom-full mb-4 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl z-50 py-2 min-w-[140px] animate-in fade-in zoom-in-95 duration-100">
+                          <div className="absolute right-full mr-4 bottom-0 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 py-2 min-w-[160px]">
                             <button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 setEditingReelId(reel.id)
                                 setEditValue(reel.description)
                                 setShowMenuId(null)
                               }}
-                              className="flex items-center gap-3 w-full px-4 py-2 text-sm text-white hover:bg-zinc-800 transition-colors"
+                              className="flex items-center gap-3 w-full px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
                             >
                               <Pencil className="w-4 h-4" /> Edit
                             </button>
                             <button 
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation()
                                 handleDelete(reel.id)
                                 setShowMenuId(null)
                               }}
-                              className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                              className="flex items-center gap-3 w-full px-5 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
                             >
                               <Trash2 className="w-4 h-4" /> Delete
                             </button>
@@ -416,64 +369,149 @@ export function ReelsPlayer({ reels, currentUserId }: ReelsPlayerProps) {
                       </div>
                     )}
                   </div>
+
+                  {/* PLAY ICON OVERLAY */}
+                  {isPaused && isCurrent && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 pointer-events-none">
+                      <div className="bg-white/20 backdrop-blur-md p-6 rounded-full z-10 border border-white/20">
+                        <Play className="w-12 h-12 text-white fill-white" />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* SHARED CONTROLS (BACK, MUTE) */}
-                <Link
-                  href="/"
-                  className="absolute top-4 left-4 p-2 bg-black/40 hover:bg-black/60 rounded-full z-20 transition-colors"
-                >
-                  <ArrowLeft className="text-white w-6 h-6" />
-                </Link>
+                {/* DESKTOP INTERACTION STACK (Outside Video) */}
+                <div className="hidden md:flex flex-col items-center gap-4 flex-shrink-0">
+                  {/* Like */}
+                  <div className="flex flex-col items-center">
+                    <button onClick={handleLike} className="group flex flex-col items-center">
+                      <div className="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 p-4 rounded-full transition-all text-gray-900 dark:text-white">
+                        <Heart
+                          className={cn(
+                            "w-7 h-7",
+                            likeState.isLiked ? "fill-red-500 text-red-500" : ""
+                          )}
+                        />
+                      </div>
+                      <span className="text-[13px] mt-2 font-bold text-gray-600 dark:text-gray-400">{likeState.count}</span>
+                    </button>
+                  </div>
 
-                {isCurrent && (
-                  <button
-                    onClick={e => {
-                      e.stopPropagation()
-                      setIsMuted(!isMuted)
-                    }}
-                    className={cn(
-                      "absolute top-6 right-6 z-20",
-                      "bg-black/40 backdrop-blur-md p-3 rounded-full hover:bg-black/60",
-                      "transition-all duration-200",
-                      isHovered ? "opacity-100" : "opacity-0 invisible md:visible md:opacity-0 md:group-hover:opacity-100"
-                    )}
-                  >
-                    {isMuted ? <VolumeX className="w-6 h-6 text-white" /> : <Volume2 className="w-6 h-6 text-white" />}
-                  </button>
-                )}
+                  {/* Dislike */}
+                  <div className="flex flex-col items-center">
+                    <button className="group flex flex-col items-center">
+                      <div className="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 p-4 rounded-full transition-all text-gray-900 dark:text-white">
+                        <ThumbsDown className="w-7 h-7" />
+                      </div>
+                      <span className="text-[13px] mt-2 font-bold text-gray-600 dark:text-gray-400">Dislike</span>
+                    </button>
+                  </div>
+
+                  {/* Comment */}
+                  <div className="flex flex-col items-center">
+                    <button onClick={() => setShowCommentModal(true)} className="group flex flex-col items-center">
+                      <div className="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 p-4 rounded-full transition-all text-gray-900 dark:text-white">
+                        <MessageCircle className="w-7 h-7" />
+                      </div>
+                      <span className="text-[13px] mt-2 font-bold text-gray-600 dark:text-gray-400">{reel.commentsCount}</span>
+                    </button>
+                  </div>
+
+                   {/* Share */}
+                  <div className="flex flex-col items-center">
+                    <button onClick={() => setShowShare(true)} className="group flex flex-col items-center">
+                      <div className="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 p-4 rounded-full transition-all text-gray-900 dark:text-white">
+                        <ShareIcon className="w-7 h-7" />
+                      </div>
+                    </button>
+                  </div>
+
+                   {/* Remix/Repeat */}
+                  <div className="flex flex-col items-center">
+                    <button className="group flex flex-col items-center">
+                      <div className="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 p-4 rounded-full transition-all text-gray-900 dark:text-white">
+                        <Repeat className="w-7 h-7" />
+                      </div>
+                    </button>
+                  </div>
+
+                  {isAuthor && (
+                    <div className="relative">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowMenuId(showMenuId === reel.id ? null : reel.id)
+                        }}
+                        className="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 p-4 rounded-full transition-all text-gray-900 dark:text-white"
+                      >
+                        <MoreVertical className="w-6 h-6" />
+                      </button>
+                      
+                      {showMenuId === reel.id && (
+                        <div className="absolute right-full mr-4 bottom-0 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-2xl z-50 py-2 min-w-[160px]">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setEditingReelId(reel.id)
+                              setEditValue(reel.description)
+                              setShowMenuId(null)
+                            }}
+                            className="flex items-center gap-3 w-full px-5 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"
+                          >
+                            <Pencil className="w-4 h-4" /> Edit
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDelete(reel.id)
+                              setShowMenuId(null)
+                            }}
+                            className="flex items-center gap-3 w-full px-5 py-3 text-sm text-red-500 hover:bg-red-500/10 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {/* MOBILE BACKDROP */}
-              {showCommentModal && isCurrent && (
-                <div 
-                  className="fixed inset-0 bottom-16 bg-black/60 z-[110] md:hidden animate-in fade-in duration-300"
-                  onClick={() => setShowCommentModal(false)}
-                />
-              )}
-
-              {/* RESPONIVE COMMENT MODAL/SIDEBAR */}
-              <div className={cn(
-                "transition-all duration-500 ease-in-out z-[120]",
-                "fixed bottom-16 left-0 right-0 md:relative md:h-full md:w-auto md:bottom-auto",
-                showCommentModal && isCurrent ? "opacity-100 visible translate-y-0" : "opacity-0 invisible pointer-events-none translate-y-10 md:w-0"
-              )}>
-                {showCommentModal && isCurrent && (
-                  <ReelsCommentSidebar 
-                    postId={reel.id}
-                    postContent={reel.description}
-                    postAuthor={reel.author}
-                    comments={reel.comments}
-                    currentUserId={currentUserId}
-                    onClose={() => setShowCommentModal(false)}
-                  />
-                )}
               </div>
             </div>
-
           </div>
         )
       })}
+    </div>
+
+    {/* PERSISTENT COMMENT SIDEBAR (Desktop: Fixed Right, Mobile: Bottom Sheet handled inside) */}
+    <div className={cn(
+      "transition-all duration-500 ease-in-out z-[120] overflow-hidden",
+      // Desktop: Fixed to far right edge
+      "md:fixed md:top-0 md:right-0 md:h-full md:w-[400px] md:border-l md:border-gray-100 md:dark:border-zinc-800 bg-white dark:bg-zinc-950",
+      showCommentModal ? "md:translate-x-0" : "md:translate-x-full",
+      // Mobile handles its own fixed positioning inside the component
+      !showCommentModal && "pointer-events-none"
+    )}>
+      {showCommentModal && currentReel && (
+        <ReelsCommentSidebar 
+          key={currentReel.id}
+          postId={currentReel.id}
+          postContent={currentReel.description}
+          postAuthor={currentReel.author}
+          comments={currentReel.comments}
+          currentUserId={currentUserId}
+          onClose={() => setShowCommentModal(false)}
+        />
+      )}
+    </div>
+
+    {/* MOBILE BACKDROP - Also lifted */}
+    {showCommentModal && (
+      <div 
+        className="fixed inset-0 bottom-16 bg-black/60 z-[110] md:hidden animate-in fade-in duration-300"
+        onClick={() => setShowCommentModal(false)}
+      />
+    )}
 
       <ShareModal
         isOpen={showShare}

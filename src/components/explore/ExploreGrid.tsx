@@ -2,19 +2,10 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { Play, Image as ImageIcon, Search } from "lucide-react"
+import { Search } from "lucide-react"
 import { searchUsers } from "@/actions/user"
 import { useState, useEffect } from "react"
-
-interface ExploreItem {
-  id: string
-  mediaUrl: string
-  mediaType: "video" | "image"
-}
-
-interface ExploreGridProps {
-  items: ExploreItem[]
-}
+import { PostGridItem } from "../feed/PostGridItem"
 
 interface SearchResult {
   id: string
@@ -23,7 +14,11 @@ interface SearchResult {
   image: string | null
 }
 
-export function ExploreGrid({ items }: ExploreGridProps) {
+interface ExploreGridProps {
+  posts: any[]
+}
+
+export function ExploreGrid({ posts }: ExploreGridProps) {
   const [query, setQuery] = useState("")
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -99,49 +94,13 @@ export function ExploreGrid({ items }: ExploreGridProps) {
 
       {/* Explore Grid */}
       <div className="grid grid-cols-3 gap-1 md:gap-4">
-      {items.map((item) => {
-        const href =
-          item.mediaType === "video"
-            ? `/reels?id=${item.id}`
-            : `/post?id=${item.id}`
-
-        return (
-          <Link
-            key={item.id}
-            href={href}
-            className="relative aspect-square overflow-hidden bg-gray-100 dark:bg-gray-900 cursor-pointer group"
-          >
-            {item.mediaType === "video" ? (
-              <>
-                <video
-                  src={item.mediaUrl}
-                  className="w-full h-full object-cover"
-                  muted
-                  playsInline
-                />
-                <div className="absolute top-2 right-2 z-10">
-                  <Play className="w-4 h-4 text-white fill-white" />
-                </div>
-              </>
-            ) : (
-              <>
-                <Image
-                  src={item.mediaUrl}
-                  alt="Explore"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute top-2 right-2 z-10">
-                  <ImageIcon className="w-4 h-4 text-white opacity-80" />
-                </div>
-              </>
-            )}
-
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </Link>
-        )
-      })}
+        {posts.map((post) => (
+          <PostGridItem 
+            key={post.id} 
+            post={post} 
+            aspectRatio="square" 
+          />
+        ))}
       </div>
     </div>
   )

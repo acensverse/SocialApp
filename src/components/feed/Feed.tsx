@@ -1,18 +1,71 @@
 import { PostCard } from "./PostCard"
 import { prisma } from "@/lib/db"
 import { auth } from "@/auth"
+import { cn } from "@/lib/utils"
+import { PostGridItem } from "./PostGridItem"
 
-export async function Feed({ authorId }: { authorId?: string }) {
+export async function Feed({ authorId, tab = "all" }: { authorId?: string, tab?: string }) {
   const session = await auth()
   
+  let where: any = {}
+  
+  if (tab === "posts") {
+    where = { 
+      authorId, 
+      mediaUrl: { not: null },
+      mediaType: { not: "video" },
+      isRepost: false
+    }
+  } else if (tab === "reels") {
+    where = { 
+      authorId, 
+      mediaType: "video",
+      isRepost: false
+    }
+  } else if (tab === "tweets") {
+    where = { 
+      authorId, 
+      mediaUrl: null,
+      isRepost: false
+    }
+  } else if (tab === "repost") {
+    where = { 
+      authorId, 
+      isRepost: true
+    }
+  } else if (tab === "tagged") {
+    where = { 
+      taggedUsers: { some: { id: authorId } }
+    }
+  } else if (authorId) {
+    where = { authorId }
+  }
+
   const posts = await prisma.post.findMany({
-    where: authorId ? { authorId } : {},
+    where,
     select: {
         id: true,
         content: true,
         mediaUrl: true,
         mediaType: true,
         createdAt: true,
+        isRepost: true,
+        originalPostId: true,
+        originalPost: {
+            select: {
+                id: true,
+                content: true,
+                mediaUrl: true,
+                mediaType: true,
+                author: {
+                    select: {
+                        id: true,
+                        name: true,
+                        image: true
+                    }
+                }
+            }
+        },
         author: {
             select: {
                 id: true,
@@ -91,6 +144,8 @@ export async function Feed({ authorId }: { authorId?: string }) {
     mediaUrl: string | null
     mediaType: string | null
     createdAt: Date
+    isRepost: boolean
+    originalPostId: string | null
     author: {
       id: string
       name: string | null
@@ -120,7 +175,7 @@ export async function Feed({ authorId }: { authorId?: string }) {
       content: post.content || "",
       image: post.mediaUrl || undefined,
       mediaType: post.mediaType || undefined,
-      timestamp: "just now",
+      timestamp: post.createdAt.toLocaleDateString(),
       isLiked: (post.likes || []).length > 0,
       currentUserId: session?.user?.id,
       comments: (post.comments || []).map((c: PrismaComment) => ({
@@ -150,15 +205,25 @@ export async function Feed({ authorId }: { authorId?: string }) {
     }
   })
 
+  const isGrid = tab === "posts" || tab === "reels"
+
   return (
-    <div className="pb-20 md:pb-0">
+    <div className={cn("pb-20 md:pb-0", isGrid && "grid grid-cols-3 gap-1 px-1 md:px-0")}>
        {transformedPosts.length === 0 ? (
-           <div className="text-center py-10 text-gray-500">
-               No posts yet. Be the first to post!
+           <div className="text-center py-10 text-gray-500 col-span-3">
+               No content found in this section.
            </div>
        ) : (
-           transformedPosts.map((post: typeof transformedPosts[number]) => (
-             <PostCard key={post.id} {...post} />
+           transformedPosts.map((post: any) => (
+             isGrid ? (
+               <PostGridItem 
+                 key={post.id} 
+                 post={post} 
+                 aspectRatio={tab === "reels" ? "video" : "square"} 
+               />
+             ) : (
+               <PostCard key={post.id} {...post} />
+             )
            ))
        )}
     </div>

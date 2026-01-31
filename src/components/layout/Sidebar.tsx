@@ -20,6 +20,9 @@ export function Sidebar() {
   const pathname = usePathname()
   const { data: session } = useSession()
 
+  const isAuthPage = pathname === "/login" || pathname === "/register"
+  if (isAuthPage) return null
+
   return (
     <aside className="hidden md:flex flex-col w-[244px] h-screen sticky top-0 border-r border-gray-200 dark:border-gray-800 px-4 py-6 bg-background">
       <div className="mb-8 px-4">

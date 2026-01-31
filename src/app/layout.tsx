@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { TopNav } from "@/components/layout/TopNav";
+import { MessageSlider } from "@/components/messages/MessageSlider";
 import { cn } from "@/lib/utils";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -33,6 +34,7 @@ export default function RootLayout({
             </MainLayout>
           </div>
           <BottomNav />
+          <MessageSlider />
         </Providers>
       </body>
     </html>

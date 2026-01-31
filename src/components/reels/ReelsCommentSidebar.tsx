@@ -113,11 +113,11 @@ export function ReelsCommentSidebar({
 
   return (
     <div className={cn(
-      "bg-white dark:bg-zinc-950 flex flex-col shadow-2xl transition-all duration-300 relative",
+      "bg-white dark:bg-zinc-950 flex flex-col transition-all duration-300 relative",
       // Desktop Sidebar
-      "md:absolute md:top-0 md:right-0 md:w-[400px] md:h-full md:border-l md:border-gray-200 md:dark:border-zinc-800 md:animate-in md:slide-in-from-right",
+      "md:absolute md:top-0 md:right-0 md:w-full md:h-full md:border-l md:border-gray-100 md:dark:border-zinc-800 md:animate-in md:slide-in-from-right",
       // Mobile Bottom Sheet
-      "fixed bottom-0 left-0 right-0 h-[65vh] rounded-t-[32px] md:rounded-none z-[100] animate-in slide-in-from-bottom duration-500"
+      "shadow-2xl fixed bottom-0 left-0 right-0 h-[65vh] rounded-t-[32px] md:rounded-none z-[100] animate-in slide-in-from-bottom duration-500"
     )}>
       {/* MINIMAL CLOSE BUTTON */}
       <button 

@@ -5,7 +5,8 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader"
 import { prisma } from "@/lib/db"
 import { getStoriesByUserId } from "@/actions/story"
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const { tab = "posts" } = await searchParams
   const session = await auth()
 
   if (!session?.user) {
@@ -52,8 +53,9 @@ export default async function ProfilePage() {
         }}
         isOwnProfile={true}
         stories={stories}
+        activeTab={tab}
       />
-      <Feed authorId={user.id} />
+      <Feed authorId={user.id} tab={tab} />
     </div>
   )
 }

@@ -5,8 +5,15 @@ import { ProfileHeader } from "@/components/profile/ProfileHeader"
 import { prisma } from "@/lib/db"
 import { getStoriesByUserId } from "@/actions/story"
 
-export default async function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function UserProfilePage({ 
+  params,
+  searchParams
+}: { 
+  params: Promise<{ id: string }>,
+  searchParams: Promise<{ tab?: string }>
+}) {
   const { id } = await params
+  const { tab = "posts" } = await searchParams
   const session = await auth()
 
   if (!session?.user) {
@@ -60,8 +67,9 @@ export default async function UserProfilePage({ params }: { params: Promise<{ id
         isFollowing={isFollowing}
         isOwnProfile={isOwnProfile}
         stories={stories}
+        activeTab={tab}
       />
-      <Feed authorId={id} />
+      <Feed authorId={id} tab={tab} />
     </div>
   )
 }
